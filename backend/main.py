@@ -4,6 +4,7 @@ load_dotenv()
 import uvicorn
 from app.db import Base,engine
 from fastapi import FastAPI
+from app.models import User
 
 app=FastAPI()
 

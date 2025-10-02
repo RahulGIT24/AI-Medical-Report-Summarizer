@@ -1,1 +1,1 @@
-from .constants import DATABASE_URL
+from .constants import DATABASE_URL, BASE_URL,UPLOADS_DIR

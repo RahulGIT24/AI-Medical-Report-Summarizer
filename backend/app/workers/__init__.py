@@ -1,0 +1,1 @@
+from .redis_workers import process_reports

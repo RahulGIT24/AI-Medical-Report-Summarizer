@@ -11,10 +11,12 @@ router=APIRouter(prefix="/report")
 
 # http://localhost:5000/uploads/916cd211-adc2-48e5-be8e-5bcd87ee9310.pdf Base File URL
 
+allowed_extensions = ['.csv','.pdf','.jpeg','.jpg','.png']
+
 @router.post("/upload")
 async def upload_files(files:list[UploadFile]=File(...)):
 
-    user_id=1 # implement at time of auth
+    user_id=1
 
     uploaded_file_locations=[]
     for file in files:

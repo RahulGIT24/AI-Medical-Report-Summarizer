@@ -7,3 +7,4 @@ __pycache__
 /backend/public/uploads/*jpg
 /backend/public/uploads/*png
 /backend/public/uploads/*csv
+/backend/public/uploads/*docx

@@ -13,6 +13,7 @@ class Reports(Base):
     owner:Mapped[int]=mapped_column(ForeignKey("users.id"))
     report_type:Mapped[str]=mapped_column(String(255), nullable=False)
     data_extracted:Mapped[bool]=mapped_column(Boolean, default=0)
+    enqued:Mapped[bool]=mapped_column(Boolean, default=0)
 
     created_at: Mapped[datetime] = mapped_column(
     DateTime, default=datetime.utcnow, server_default=func.now()

@@ -13,7 +13,8 @@ class Reports(Base):
     owner:Mapped[int]=mapped_column(ForeignKey("users.id"))
     report_type:Mapped[str]=mapped_column(String(255), nullable=False)
     data_extracted:Mapped[bool]=mapped_column(Boolean, default=0)
-    enqued:Mapped[bool]=mapped_column(Boolean, default=0)
+    enqueued:Mapped[bool]=mapped_column(Boolean, default=0)
+    error:Mapped[bool]=mapped_column(Boolean, default=0)
 
     created_at: Mapped[datetime] = mapped_column(
     DateTime, default=datetime.utcnow, server_default=func.now()
@@ -35,3 +36,32 @@ class Reports(Base):
         db.bulk_save_objects(report_objects)
         db.commit()
         return report_objects
+
+    @classmethod
+    def get_report(cls,db:Session,id:int):
+        report = db.query(cls).filter(cls.id == id).first()
+        if not report:
+            return None
+        if report.error or report.data_extracted:
+            return None
+        return report
+
+    @classmethod
+    def mark_error(cls,db:Session,id:int):
+        report = db.query(cls).filter(cls.id == id).first()
+        if report:
+            report.error = 1
+            report.updated_at = datetime.utcnow()
+            db.commit()
+            db.refresh(report)
+        return report
+
+    @classmethod
+    def mark_completed(cls,db:Session,id:int):
+        report = db.query(cls).filter(cls.id == id).first()
+        if report:
+            report.data_extracted = 1
+            report.updated_at = datetime.utcnow()
+            db.commit()
+            db.refresh(report)
+        return report

@@ -13,7 +13,7 @@ BATCH_SIZE=10
 def enqueue_pending_reports():
     try:
         db:Session = SessionLocal()
-        pending = db.query(Reports).filter(Reports.data_extracted==False, Reports.enqued==False).limit(BATCH_SIZE).all()
+        pending = db.query(Reports).filter(Reports.data_extracted==False, Reports.enqueued==False).limit(BATCH_SIZE).all()
 
         if not pending:
             print("Nothing to enqueue!!")
@@ -23,7 +23,7 @@ def enqueue_pending_reports():
         report_ids = [r.id for r in pending]
 
         for r in pending:
-            r.enqued = True
+            r.enqueued = True
         db.commit()
 
         print(report_ids)

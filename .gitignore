@@ -6,5 +6,11 @@ __pycache__
 /backend/public/uploads/*jpeg
 /backend/public/uploads/*jpg
 /backend/public/uploads/*png
+/backend/public/processed/*pdf
+/backend/public/processed/*jpeg
+/backend/public/processed/*jpg
+/backend/public/uploads/*png
 /backend/public/uploads/*csv
 /backend/public/uploads/*docx
+/backend/public/sample_data
+/backend/output

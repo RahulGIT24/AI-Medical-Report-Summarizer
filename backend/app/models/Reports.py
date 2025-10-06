@@ -23,6 +23,7 @@ class Reports(Base):
     DateTime, default=datetime.utcnow, server_default=func.now()
 )
     user:Mapped["User"] = relationship(back_populates="reports")
+    reports_data: Mapped[List["ReportsData"]] = relationship(back_populates="report",cascade="all, delete-orphan")
 
     @classmethod
     def bulk_create(

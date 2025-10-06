@@ -4,7 +4,7 @@ load_dotenv()
 import uvicorn
 from app.db import Base,engine
 from fastapi import FastAPI
-from app.models import User, Reports
+from app.models import User, Reports, ReportsData
 from app.lib.seed import seed_in
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles

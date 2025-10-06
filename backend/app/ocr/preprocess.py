@@ -18,7 +18,7 @@ def preprocess_image(img_src: str):
         if not os.path.exists(img_src):
             raise ValueError(f"File does not exist: {img_src}")
         img = cv2.imread(img_src)
-    
+
     if img is None:
         raise ValueError(f"Failed to load image: {img_src}")
 

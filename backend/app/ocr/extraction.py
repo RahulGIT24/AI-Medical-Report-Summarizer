@@ -3,9 +3,12 @@ from app.ocr.preprocess import preprocess_image
 
 def text_extraction(img:str):
     ocr = PaddleOCR(
-    use_doc_orientation_classify=False,
-    use_doc_unwarping=False,
-    use_textline_orientation=False)
+    lang='en',
+    use_angle_cls=False,
+    ocr_version='PP-OCRv3',
+    enable_mkldnn=True,
+    # use_gpu=False
+)
 
     result = ocr.predict(
     input=img)

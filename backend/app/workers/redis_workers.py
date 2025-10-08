@@ -6,7 +6,6 @@ db=SessionLocal()
 
 def process_reports(report_ids: list[int]):
     for rid in report_ids:
-        print(rid)
         report = Reports.get_report(db=db, id=rid)
 
         if not report:

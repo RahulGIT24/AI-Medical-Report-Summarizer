@@ -9,8 +9,6 @@ db=SessionLocal()
 
 router=APIRouter(prefix="/report")
 
-# http://localhost:5000/uploads/916cd211-adc2-48e5-be8e-5bcd87ee9310.pdf Base File URL
-
 allowed_extensions = ['pdf','jpeg','jpg','png']
 
 @router.post("/upload")

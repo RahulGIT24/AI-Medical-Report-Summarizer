@@ -1,0 +1,35 @@
+from app.db import Base
+from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
+from sqlalchemy import Integer,String, DateTime, Text, ForeignKey, Enum,Float
+from datetime import datetime
+from app.schemas import TestOutcome
+
+class TestResults(Base):
+    __tablename__ = "test_results"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), nullable=False)
+    
+    # Test identification
+    test_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    test_category: Mapped[str] = mapped_column(String(100), nullable=True)  # "Opiates", "Barbiturates", etc.
+    
+    # Test outcome and results
+    outcome: Mapped[TestOutcome] = mapped_column(Enum(TestOutcome), nullable=True)
+    result_value: Mapped[str] = mapped_column(String(100), nullable=True)
+    result_numeric: Mapped[float] = mapped_column(Float, nullable=True)  # For numeric values
+    unit: Mapped[str] = mapped_column(String(50), nullable=True)
+    
+    # Reference values
+    cutoff_value: Mapped[str] = mapped_column(String(50), nullable=True)
+    reference_range: Mapped[str] = mapped_column(String(100), nullable=True)
+    detection_window: Mapped[str] = mapped_column(String(100), nullable=True)
+    
+    # Flags
+    is_abnormal: Mapped[bool] = mapped_column(default=False)
+    is_critical: Mapped[bool] = mapped_column(default=False)
+    
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    report: Mapped["Reports"] = relationship(back_populates="test_results")

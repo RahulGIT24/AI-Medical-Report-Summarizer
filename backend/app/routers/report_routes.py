@@ -47,7 +47,6 @@ async def upload_files(files:list[UploadFile]=File(...)):
     Reports.bulk_create(
             db=db, 
             owner_id=user_id,
-            report_type='N/A',
             urls=uploaded_file_locations
     )
 

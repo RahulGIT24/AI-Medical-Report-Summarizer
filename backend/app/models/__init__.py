@@ -2,7 +2,7 @@ from .User import User
 from .Reports import Reports
 from .ReportsData import ReportsData
 from .ReportMetadata import ReportMetaData
-from .ConfimationTests import ConfirmationTests
+from .ConfirmationTests import ConfirmationTests
 from .ReportedMedications import ReportedMedications
 from .SpecimenValidity import SpecimenValidity
 from .ScreeningTests import ScreeningTests

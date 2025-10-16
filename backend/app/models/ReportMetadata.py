@@ -24,3 +24,16 @@ class ReportMetaData(Base):
     # 1-1 relation with report
     report_id:Mapped[int]=mapped_column(Integer,ForeignKey("reports.id"))
     report:Mapped["Reports"] = relationship(back_populates="report_metadata")
+
+    @classmethod
+    def create(cls, session: Session, **kwargs):
+        """
+        Class method to insert a new ReportMetaData record.
+        Usage:
+            ReportMetaData.create(session, patient_name="John Doe", report_type="Lab", ...)
+        """
+        new_report = cls(**kwargs)
+        session.add(new_report)
+        session.commit()
+        session.refresh(new_report)
+        return new_report

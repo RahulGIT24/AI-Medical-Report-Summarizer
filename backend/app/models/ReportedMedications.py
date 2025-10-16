@@ -1,5 +1,5 @@
 from app.db import Base
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 from sqlalchemy import Integer,String, ForeignKey, DateTime
 from datetime import datetime
 
@@ -16,3 +16,16 @@ class ReportedMedications(Base):
     
     # Relationship
     report: Mapped["Reports"] = relationship(back_populates="medications")
+
+    @classmethod
+    def create(cls, session: Session, **kwargs):
+        """
+        Class method to insert a new ReportMetaData record.
+        Usage:
+            ReportMetaData.create(session, patient_name="John Doe", report_type="Lab", ...)
+        """
+        data = cls(**kwargs)
+        session.add(data)
+        session.commit()
+        session.refresh(data)
+        return data

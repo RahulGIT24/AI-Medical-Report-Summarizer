@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import DateTime, func, ForeignKey,Integer, String, Boolean
+from sqlalchemy import DateTime, func, ForeignKey,Integer, String, Boolean, Text
 
 class Reports(Base):
     __tablename__="reports"
@@ -16,6 +16,7 @@ class Reports(Base):
     data_extracted:Mapped[bool]=mapped_column(Boolean, default=0)
     enqueued:Mapped[bool]=mapped_column(Boolean, default=0)
     error:Mapped[bool]=mapped_column(Boolean, default=0)
+    errormsg:Mapped[str]=mapped_column(Text, default="")
 
     created_at: Mapped[datetime] = mapped_column(
     DateTime, default=datetime.utcnow, server_default=func.now()
@@ -55,10 +56,11 @@ class Reports(Base):
         return report
 
     @classmethod
-    def mark_error(cls,db:Session,id:int):
+    def mark_error(cls,db:Session,id:int,errormsg:str):
         report = db.query(cls).filter(cls.id == id).first()
         if report:
             report.error = 1
+            report.errormsg = errormsg
             report.updated_at = datetime.utcnow()
             db.commit()
             db.refresh(report)

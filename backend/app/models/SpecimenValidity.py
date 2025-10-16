@@ -1,6 +1,7 @@
 from app.db import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Integer,String, ForeignKey,Float
+from sqlalchemy.orm import Session
 
 class SpecimenValidity(Base):
     __tablename__ = "specimen_validity"
@@ -27,3 +28,16 @@ class SpecimenValidity(Base):
     
     # Relationship
     report: Mapped["Reports"] = relationship(back_populates="specimen_validity")
+
+    @classmethod
+    def create(cls, session: Session, **kwargs):
+        """
+        Class method to insert a new ReportMetaData record.
+        Usage:
+            ReportMetaData.create(session, patient_name="John Doe", report_type="Lab", ...)
+        """
+        data = cls(**kwargs)
+        session.add(data)
+        session.commit()
+        session.refresh(data)
+        return data

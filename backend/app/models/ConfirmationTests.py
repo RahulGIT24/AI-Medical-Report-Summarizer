@@ -1,8 +1,7 @@
 from app.db import Base
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship,Session
 from sqlalchemy import Integer,String, ForeignKey, Enum, DateTime,Float
 from datetime import datetime
-from app.schemas import TestOutcome
 
 class ConfirmationTests(Base):
     __tablename__ = "confirmation_tests"
@@ -12,7 +11,7 @@ class ConfirmationTests(Base):
     
     test_name: Mapped[str] = mapped_column(String(255), nullable=False)
     method: Mapped[str] = mapped_column(String(100), nullable=True)  # "LC-MS/MS", "GC-MS", etc.
-    outcome: Mapped[TestOutcome] = mapped_column(Enum(TestOutcome), nullable=False)
+    outcome: Mapped[str] = mapped_column(String(255), nullable=False)
     
     result_value: Mapped[str] = mapped_column(String(100), nullable=True)
     result_numeric: Mapped[float] = mapped_column(Float, nullable=True)
@@ -25,3 +24,16 @@ class ConfirmationTests(Base):
     
     # Relationship
     report: Mapped["Reports"] = relationship(back_populates="confirmation_tests")
+
+    @classmethod
+    def create(cls, session: Session, **kwargs):
+        """
+        Class method to insert a new ReportMetaData record.
+        Usage:
+            ReportMetaData.create(session, patient_name="John Doe", report_type="Lab", ...)
+        """
+        data = cls(**kwargs)
+        session.add(data)
+        session.commit()
+        session.refresh(data)
+        return data

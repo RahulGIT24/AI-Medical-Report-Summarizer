@@ -9,7 +9,7 @@ class Reports(Base):
     __tablename__="reports"
 
     id:Mapped[int]=mapped_column(Integer, primary_key=True)
-    url:Mapped[str]=mapped_column(String(255), nullable=False)
+    url:Mapped[str]=mapped_column(String(255), nullable=True)
     owner:Mapped[int]=mapped_column(ForeignKey("users.id"))
 
     # checks/status

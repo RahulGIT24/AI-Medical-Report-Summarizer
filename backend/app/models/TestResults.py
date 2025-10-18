@@ -10,7 +10,7 @@ class TestResults(Base):
     report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), nullable=False)
     
     # Test identification
-    test_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    test_name: Mapped[str] = mapped_column(String(255), nullable=True)
     test_category: Mapped[str] = mapped_column(String(100), nullable=True)  # "Opiates", "Barbiturates", etc.
     
     # Test outcome and results
@@ -25,8 +25,8 @@ class TestResults(Base):
     detection_window: Mapped[str] = mapped_column(String(100), nullable=True)
     
     # Flags
-    is_abnormal: Mapped[bool] = mapped_column(default=False)
-    is_critical: Mapped[bool] = mapped_column(default=False)
+    is_abnormal: Mapped[bool] = mapped_column(default=True)
+    is_critical: Mapped[bool] = mapped_column(default=True)
     
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     

@@ -9,8 +9,8 @@ class ScreeningTests(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), nullable=False)
     
-    test_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    outcome: Mapped[str] = mapped_column(String(255), nullable=False)
+    test_name: Mapped[str] = mapped_column(String(255), nullable=True)
+    outcome: Mapped[str] = mapped_column(String(255), nullable=True)
     result_value: Mapped[str] = mapped_column(String(100), nullable=True)
     cutoff_value: Mapped[str] = mapped_column(String(50), nullable=True)
     

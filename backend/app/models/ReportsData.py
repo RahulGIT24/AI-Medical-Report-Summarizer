@@ -6,9 +6,9 @@ class ReportsData(Base):
     __tablename__="reports_data"
 
     id:Mapped[int]=mapped_column(Integer, primary_key=True)
-    raw_name:Mapped[str]=mapped_column(String(255), nullable=False)
-    mapped_name:Mapped[str]=mapped_column(String(255), nullable=False)
-    field_value:Mapped[str]=mapped_column(String(50), nullable=False)
+    raw_name:Mapped[str]=mapped_column(String(255), nullable=True)
+    mapped_name:Mapped[str]=mapped_column(String(255), nullable=True)
+    field_value:Mapped[str]=mapped_column(String(50), nullable=True)
     status:Mapped[bool]
     unit_value:Mapped[str]=mapped_column(String(50), nullable=True)
     

@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.118.0",
+    "fastembed>=0.7.3",
     "groq>=0.32.0",
     "langchain>=0.3.27",
     "langchain-groq>=0.3.8",
@@ -18,6 +19,7 @@ dependencies = [
     "pytesseract>=0.3.13",
     "python-dotenv>=1.1.1",
     "python-multipart>=0.0.20",
+    "qdrant-client>=1.15.1",
     "redis[hiredis]>=6.4.0",
     "rq>=2.6.0",
     "sqlalchemy>=2.0.43",

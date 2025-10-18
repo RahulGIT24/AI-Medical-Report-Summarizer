@@ -9,7 +9,7 @@ class ReportedMedications(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), nullable=False)
     
-    medication_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    medication_name: Mapped[str] = mapped_column(String(255), nullable=True)
     is_tested: Mapped[bool] = mapped_column(default=True)
     
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

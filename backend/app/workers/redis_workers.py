@@ -2,6 +2,8 @@ from app.db import SessionLocal
 from app.models import ConfirmationTests, Reports
 from app.ocr import preprocess_image,text_extraction,llm_class
 from app.models import ReportMetaData, SpecimenValidity, TestResults, ScreeningTests,ReportedMedications, ConfirmationTests
+from app.lib import raw_data_vectorization
+from app.workers.vector_db_workers import vectorize_raw_report_data
 
 db=SessionLocal()
 
@@ -107,3 +109,13 @@ def process_reports(report_ids: list[int]):
                 medication_name=medication.get("medication_name",None),
                 is_tested=medication.get("is_tested",None),
             )
+        # for collection1
+        raw_report_vectorize = {
+            "report_id":rid,
+            "user_id":report.owner,
+            "raw_data":cleaned_report
+        }
+
+        Reports.mark_completed(db=db,id=rid)
+
+        raw_data_vectorization.enqueue(vectorize_raw_report_data,raw_report_vectorize)

@@ -7,11 +7,11 @@ class ConfirmationTests(Base):
     __tablename__ = "confirmation_tests"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), nullable=False)
+    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), nullable=True)
     
-    test_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    test_name: Mapped[str] = mapped_column(String(255), nullable=True)
     method: Mapped[str] = mapped_column(String(100), nullable=True)  # "LC-MS/MS", "GC-MS", etc.
-    outcome: Mapped[str] = mapped_column(String(255), nullable=False)
+    outcome: Mapped[str] = mapped_column(String(255), nullable=True)
     
     result_value: Mapped[str] = mapped_column(String(100), nullable=True)
     result_numeric: Mapped[float] = mapped_column(Float, nullable=True)

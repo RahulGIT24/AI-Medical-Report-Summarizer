@@ -21,7 +21,8 @@ class Qdrant:
                     vectors_config=VectorParams(size=384, distance=Distance.COSINE),
                 )
         except Exception as e:
-            print(e)
+            # print(e)
+            pass
 
     def get_client(self):
         return self.client

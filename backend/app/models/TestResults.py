@@ -44,4 +44,8 @@ class TestResults(Base):
         session.add(data)
         session.commit()
         session.refresh(data)
-        return data
+        report_dict = {c.key: getattr(data, c.key) for c in cls.__table__.columns}
+
+        # Drop 'id' and any None values
+        clean_dict = {k: v for k, v in report_dict.items() if (k != "id" or k!="report_id") and v is not None}
+        return clean_dict,data.id

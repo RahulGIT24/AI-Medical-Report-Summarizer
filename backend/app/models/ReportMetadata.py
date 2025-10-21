@@ -36,4 +36,9 @@ class ReportMetaData(Base):
         session.add(new_report)
         session.commit()
         session.refresh(new_report)
-        return new_report
+        report_dict = {c.key: getattr(new_report, c.key) for c in cls.__table__.columns}
+
+        # Drop 'id' and any None values
+        clean_dict = {k: v for k, v in report_dict.items() if (k != "id" or k!="report_id") and v is not None}
+
+        return clean_dict,new_report.id

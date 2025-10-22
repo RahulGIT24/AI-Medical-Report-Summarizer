@@ -34,3 +34,18 @@ class ReportedMedications(Base):
         clean_dict = {k: v for k, v in report_dict.items() if (k != "id" or k!="report_id") and v is not None}
 
         return clean_dict,data.id
+    
+    @classmethod
+    def get_by_id(cls, db: Session, id: int):
+        exclude = [
+            "id","report_id"
+        ]
+        data = db.query(cls).filter(cls.id == id).first()
+        if not data:
+            return None
+        readable_dict = {
+            c.name: getattr(data, c.name)
+            for c in cls.__table__.columns
+            if c.name not in exclude
+        }
+        return readable_dict

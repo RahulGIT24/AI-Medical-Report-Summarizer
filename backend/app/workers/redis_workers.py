@@ -2,7 +2,7 @@ from app.db import SessionLocal
 from app.models import ConfirmationTests, Reports
 from app.ocr import preprocess_image,text_extraction,llm_class
 from app.models import ReportMetaData, SpecimenValidity, TestResults, ScreeningTests,ReportedMedications, ConfirmationTests
-from app.lib import raw_data_vectorization
+from app.lib import raw_data_vectorization,get_extraction_prompt
 from app.workers.vector_db_workers import vectorize_raw_report_data
 
 db=SessionLocal()
@@ -25,7 +25,7 @@ def process_reports(report_ids: list[int]):
             report_src=report.url
             img=preprocess_image(img_src=report_src)
             raw_text=text_extraction(img=img)
-            llm = llm_class(report_data=raw_text)
+            llm = llm_class(report_data=raw_text,prompt=get_extraction_prompt(),query_context=None,user_query=None)
             llm.set_report_id(rid)
             cleaned_report = llm.call_llm()
 

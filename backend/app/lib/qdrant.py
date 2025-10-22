@@ -31,7 +31,7 @@ class Qdrant:
     def get_embedder(self):
         return TextEmbedding()
     
-    def insert_raw_report_embedding(self,embeddings,report_id,user_id,chunk_id,collection_id):
+    def insert_raw_report_embedding(self,embeddings,report_id,user_id,chunk_id,collection_id,collection_name):
         try:
             point = PointStruct(
                 id=str(uuid.uuid4()),
@@ -40,7 +40,8 @@ class Qdrant:
                     "user_id": str(user_id),
                     "report_id":str(report_id),
                     "chunk_id":str(chunk_id),
-                    "collection_id":str(collection_id)
+                    "collection_id":str(collection_id),
+                    "collection_name":str(collection_name)
                 }
             )
             qdrant.upsert(collection_name=QDRANT_COLLECTION_1, points=[point])
@@ -62,7 +63,7 @@ class Qdrant:
                     models.FieldCondition(
                         key="user_id",
                         match=models.MatchValue(
-                            value=user_id,
+                            value=str(user_id),
                         ),
                     )
                 ]

@@ -4,8 +4,18 @@ import shutil
 from app.lib import BASE_URL
 import uuid
 from app.db import SessionLocal
-from app.models import Reports
-from app.lib import client
+from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,ScreeningTests,ConfirmationTests,ReportedMedications
+from app.lib import client,get_query_prompt
+from app.ocr import llm_class
+
+MAPPINGS = {
+    "specimen_validity":SpecimenValidity,
+    "report_metadata":ReportMetaData,
+    "test_results":TestResults,
+    "screening_tests":ScreeningTests,
+    "confirmation_tests":ConfirmationTests,
+    "reported_medications":ReportedMedications
+}
 
 db=SessionLocal()
 
@@ -69,20 +79,28 @@ async def query_reports(query:str | None):
 
         query = query.strip()
 
-        points = client.similarity_search_collection1(query_str=query,top_k=5,user_id=1)
+        metadata = [
 
-        report_ids = []
+        ]
 
-        ids = [p.id for p in points]
+        points = client.similarity_search_collection1(query_str=query,top_k=10,user_id=1)
 
-        if len(ids) > 0:
-            report_ids=list(set(ids))
+        payloads = [p.payload for p in points]
+        
+        context = []
+        for data in payloads:
+            with SessionLocal() as db:
+                context.append(MAPPINGS.get(data.get("collection_name")).get_by_id(db=db,id=data.get("collection_id")))
 
-        data = {
-            "report_ids":report_ids
+        llm = llm_class(prompt=get_query_prompt(),query_context=context,report_data=None,user_query=query)
+
+        result = llm.call_llm()
+        content = {
+            "query":query,
+            "response":str(result.encode('utf-8').decode('unicode_escape'))
         }
 
-        return JSONResponse(status_code=200,content=data)
+        return JSONResponse(status_code=200,content=content)
     except HTTPException as e:
         raise e
     except Exception as e:

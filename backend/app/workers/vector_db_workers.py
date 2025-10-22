@@ -33,10 +33,12 @@ def vectorize_raw_report_data(report_data):
     """
     report_id = report_data.get("report_id",None)
     user_id = report_data.get("user_id",None)
+    print(report_id,user_id)
 
     report_data_list = report_data.get("data",[])
     for report_dict in report_data_list:
         collection_id = report_dict.get("collection_id")
+        collection_name = report_dict.get("name")
         data = report_dict.get("data", {})
 
         # 1. Clean and flatten the report
@@ -58,7 +60,8 @@ def vectorize_raw_report_data(report_data):
                 chunk_id=idx,
                 report_id=report_id,
                 user_id=user_id,
-                collection_id=collection_id
+                collection_id=collection_id,
+                collection_name=collection_name
             )
 
         print(f"Inserted {len(chunks)} embeddings for report {report_id} in collection {collection_id}")

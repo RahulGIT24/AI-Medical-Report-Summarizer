@@ -75,3 +75,4 @@ class Reports(Base):
             db.commit()
             db.refresh(report)
         return report
+    

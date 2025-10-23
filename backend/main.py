@@ -12,7 +12,7 @@ from app.lib import UPLOADS_DIR, qdrant
 
 app=FastAPI()
 
-origins=["http://localhost:5173/*","http://localhost:5174/*"]
+origins=["http://localhost:5173"]
 
 app.add_middleware(
     CORSMiddleware,

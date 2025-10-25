@@ -207,18 +207,17 @@ def signout(user=Depends(get_current_user),db: Session = Depends(get_db)):
             key="access_token",
             httponly=True,
             secure=True,
-            samesite="strict"
+            samesite="none"
         )
         response.delete_cookie(
             key="refresh_token",
             httponly=True,
             secure=True,
-            samesite="strict"
+            samesite="none"
         )
         return response
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(e)
         db.rollback()
         raise HTTPException(status_code=500, detail="Something went wrong")

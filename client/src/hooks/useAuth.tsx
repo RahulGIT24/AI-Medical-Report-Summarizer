@@ -1,5 +1,5 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
+import { apiCall } from "../lib/apiCall";
 
 interface User {
   id: number;
@@ -16,11 +16,8 @@ const useAuth = () => {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_BASE_URL}/auth/get-user`,
-        { withCredentials: true }
-      );
-      setUser(res.data);
+      const res = await apiCall("/auth/get-user")
+      setUser(res);
       setIsAuthenticated(true);
     } catch (err) {
       console.error("Auth fetch error:", err);

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
-import axios from "axios";
 import { useNavigate } from "react-router";
+import { apiCall } from "../../lib/apiCall";
 
 interface FormDataSigin {
   email: string,
@@ -42,8 +42,8 @@ export default function Signin() {
     }
     try {
       setLoading(true);
-      const res = await axios.post(import.meta.env.VITE_BASE_URL + "/auth/signin", formdata,{withCredentials:true})
-      toast.success(res.data.message)
+      const res = await apiCall("/auth/signin","POST",formdata)
+      toast.success(res.message)
       navigate("/dashboard")
       resetForm()
     } catch (error:any) {

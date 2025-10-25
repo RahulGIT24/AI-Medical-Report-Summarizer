@@ -5,6 +5,7 @@ import Signup from './pages/auth/SignUp'
 import Dashboard from './pages/dashboard'
 import PublicRoute from './pages/auth/Public'
 import ProtectedRoute from './pages/auth/Protected'
+import AIChatInterface from './pages/Chat'
 
 const App = () => {
   return (
@@ -18,6 +19,7 @@ const App = () => {
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route path='/dashboard' element={<Dashboard />} />
+          <Route path='/chat' element={<AIChatInterface />} />
         </Route>
       </Routes>
     </Router>

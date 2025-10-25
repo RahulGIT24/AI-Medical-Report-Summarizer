@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { User, Mail, Lock, ArrowRight, Loader2, CircleSmall, Phone } from "lucide-react";
 import { toast } from "react-toastify";
-import axios from "axios";
+import { apiCall } from "../../lib/apiCall";
 
 interface FormDataSignup {
     fname: string,
@@ -56,8 +56,8 @@ export default function Signup() {
         }
         try {
             setLoading(true);
-            const res = await axios.post(import.meta.env.VITE_BASE_URL + "/auth/signup", formdata)
-            toast.success(res.data.message)
+            const res = await apiCall("/auth/signup","POST",formdata)
+            toast.success(res.message)
             resetForm()
         } catch (error) {
             console.log(error)

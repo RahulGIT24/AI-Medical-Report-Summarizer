@@ -30,9 +30,11 @@ app.mount("/uploads",StaticFiles(directory=UPLOADS_DIR), name="static")
 # routers imported
 from app.routers.report_routes import router as report_routes
 from app.routers.auth import router as auth_routes
+from app.routers.user import router as user_routes
 
 app.include_router(router=report_routes)
 app.include_router(router=auth_routes)
+app.include_router(router=user_routes)
 
 if __name__ == "__main__":
     import os

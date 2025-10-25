@@ -71,6 +71,7 @@ class Reports(Base):
         report = db.query(cls).filter(cls.id == id).first()
         if report:
             report.data_extracted = 1
+            report.enqueued = 0
             report.updated_at = datetime.utcnow()
             db.commit()
             db.refresh(report)

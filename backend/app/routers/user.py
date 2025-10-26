@@ -1,11 +1,13 @@
 from fastapi import APIRouter,Depends, HTTPException
 from app.middleware import get_current_user
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 from app.db import get_db
 from fastapi.responses import JSONResponse
 from app.models import Reports
 from datetime import datetime
+from app.schemas import ReportSchema
+from typing import List
 
 router=APIRouter(prefix="/user")
 
@@ -23,6 +25,40 @@ def get_user_stats(user=Depends(get_current_user),db: Session = Depends(get_db))
             now = datetime.utcnow()
             days_ago = (now - last_report.created_at).days
         return JSONResponse(status_code=200,content={"count":count,"days_ago":days_ago,"queries":0})
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Something went wrong")
+
+@router.get('/reports',response_model=List[ReportSchema])
+def get_user_reports(user=Depends(get_current_user),db: Session = Depends(get_db)):
+    try:
+        reports = (
+            db.query(Reports)
+            .filter(Reports.owner == user["id"])
+            .filter(or_(Reports.data_extracted == True, Reports.error == True))
+            .order_by(desc(Reports.created_at))
+            .all()
+        )
+        return reports
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=500, detail="Something went wrong")
+
+@router.get('/reports-enqueued',response_model=List[ReportSchema])
+def get_user_reports(user=Depends(get_current_user),db: Session = Depends(get_db)):
+    try:
+        reports = (
+            db.query(Reports)
+            .filter(Reports.owner == user["id"])
+            .filter(Reports.enqueued == True)
+            .order_by(desc(Reports.created_at))
+            .all()
+        )
+        return reports
     except HTTPException as e:
         raise e
     except Exception as e:

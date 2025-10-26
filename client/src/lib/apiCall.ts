@@ -4,13 +4,14 @@ export async function apiCall(
     endpoint: string,
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "GET",
     data: any = {},
+    content_type:string = "application/json"
 ) {
     try {
         const api = axios.create({
             baseURL: import.meta.env.VITE_BASE_URL,
             withCredentials: true,
             headers: {
-                "Content-Type": "application/json",
+                "Content-Type": content_type,
             },
         });
 

@@ -86,7 +86,8 @@ def get_extraction_prompt():
     ],
   }}
 
-  Return ONLY valid JSON, no additional text or explanation. If it is not a valid test report please Simply return in string format NOT A VALID TEST REPORT.
+  IF THE REPORT CONTAINS SOME OTHER NAMES THAT HAVE SIMILAR MEANING ITEM PRESENT IN REQUIRED JSON THEN PLEASE IN THE OUTPUT JSON DON'T CHANGE THE KEY, MAP THAT DATA ACCORDING TO REQUIRED JSON FIELDS.
+  Return ONLY valid JSON, no additional text or explanation. If it is not a valid test report please Simply return in string format NOT A VALID TEST REPORT. 
 """
 
 def get_query_prompt():

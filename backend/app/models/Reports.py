@@ -60,6 +60,7 @@ class Reports(Base):
         report = db.query(cls).filter(cls.id == id).first()
         if report:
             report.error = 1
+            report.enqueued = 0
             report.errormsg = errormsg
             report.updated_at = datetime.utcnow()
             db.commit()

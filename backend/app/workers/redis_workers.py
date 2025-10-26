@@ -4,6 +4,7 @@ from app.ocr import preprocess_image,text_extraction,llm_class
 from app.models import ReportMetaData, SpecimenValidity, TestResults, ScreeningTests,ReportedMedications, ConfirmationTests
 from app.lib import raw_data_vectorization,get_extraction_prompt
 from app.workers.vector_db_workers import vectorize_raw_report_data
+from app.models import ReportsMedia
 
 db=SessionLocal()
 
@@ -22,9 +23,18 @@ def process_reports(report_ids: list[int]):
             if not report:
                 continue
 
-            report_src=report.url
-            img=preprocess_image(img_src=report_src)
-            raw_text=text_extraction(img=img)
+            report_medias = db.query(ReportsMedia).filter(ReportsMedia.report_id == rid).all()
+
+            if not report_medias or len(report_medias) == 0:
+                continue
+
+            raw_text = ""
+
+            for r in report_medias:
+                report_src=r.url
+                img=preprocess_image(img_src=report_src)
+                raw_text+=text_extraction(img=img)
+
             llm = llm_class(report_data=raw_text,prompt=get_extraction_prompt(),query_context=None,user_query=None)
             llm.set_report_id(rid)
             cleaned_report = llm.call_llm()
@@ -36,8 +46,6 @@ def process_reports(report_ids: list[int]):
             screening_tests = cleaned_report["screening_tests"] 
             confirmation_analysis = cleaned_report["confirmation_analysis"] 
             reported_medications = cleaned_report["reported_medications"]
-
-            # Thinking....
 
             data_to_vectorize = []
 
@@ -156,4 +164,4 @@ def process_reports(report_ids: list[int]):
             raw_data_vectorization.enqueue(vectorize_raw_report_data,raw_report_vectorize)
     except Exception:
         db.rollback()
-        # Reports.mark_error(db=db,errormsg="Unable to Store data",id=rid)
+        Reports.mark_error(db=db,errormsg="Unable to Store data",id=rid)

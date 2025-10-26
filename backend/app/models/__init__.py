@@ -7,3 +7,4 @@ from .ReportedMedications import ReportedMedications
 from .SpecimenValidity import SpecimenValidity
 from .ScreeningTests import ScreeningTests
 from .TestResults import TestResults
+from .ReportsMedia import ReportsMedia

@@ -8,6 +8,7 @@ from app.models import Reports
 from datetime import datetime
 from app.schemas import ReportSchema
 from typing import List
+from sqlalchemy.orm import joinedload
 
 router=APIRouter(prefix="/user")
 
@@ -37,6 +38,7 @@ def get_user_reports(user=Depends(get_current_user),db: Session = Depends(get_db
         reports = (
             db.query(Reports)
             .filter(Reports.owner == user["id"])
+            .options(joinedload(Reports.reports_media))
             .filter(or_(Reports.data_extracted == True, Reports.error == True))
             .order_by(desc(Reports.created_at))
             .all()

@@ -7,6 +7,7 @@ from app.db import SessionLocal
 from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,ScreeningTests,ConfirmationTests,ReportedMedications
 from app.lib import client,get_query_prompt
 from app.ocr import llm_class
+from app.models import ReportsMedia
 
 MAPPINGS = {
     "specimen_validity":SpecimenValidity,
@@ -21,7 +22,7 @@ db=SessionLocal()
 
 router=APIRouter(prefix="/report")
 
-allowed_extensions = ['pdf','jpeg','jpg','png']
+allowed_extensions = ['jpeg','jpg','png']
 
 @router.post("/upload")
 async def upload_files(files:list[UploadFile]=File(...)):
@@ -33,7 +34,7 @@ async def upload_files(files:list[UploadFile]=File(...)):
         if len(files)==0:
             raise HTTPException(detail="Please Provide some files to upload", status_code=400)
 
-        if len(files)>5:
+        if len(files)>10:
             raise HTTPException(detail="Can't upload more than 5 files at a time", status_code=400)
 
         for file in files:
@@ -43,6 +44,14 @@ async def upload_files(files:list[UploadFile]=File(...)):
                 raise HTTPException(detail=f"{file.filename} has an invalid extension. Allowed file types are {', '.join(allowed_extensions)}", status_code=400)   
 
         uploaded_file_locations=[]
+
+        report=Reports(
+            owner=user_id,
+        )
+        db.add(report)
+        db.commit()
+        db.flush()
+
         for file in files:
 
             splitted_name = file.filename.split(".")
@@ -55,19 +64,18 @@ async def upload_files(files:list[UploadFile]=File(...)):
                 shutil.copyfileobj(file.file,buffer)
 
             uploaded_file_locations.append(BASE_URL+"uploads/"+final_name)
+        
+        ReportsMedia.bulk_create(db=db,report_id=report.id,urls=uploaded_file_locations)
+
     except HTTPException as e:
         raise e
     except Exception as e:
         print("Error occured while uploading reports ",e)
         raise HTTPException(status_code=500,detail="Internal Server Error")
 
-    Reports.bulk_create(
-            db=db, 
-            owner_id=user_id,
-            urls=uploaded_file_locations
-    )
+    
     data  ={
-        "files":uploaded_file_locations
+        "message":'Report Uploaded Successfully'
     }
     return JSONResponse(status_code=200,content=data)
 

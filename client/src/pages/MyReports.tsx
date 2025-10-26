@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react"
-import { 
-  FileText, 
-  Download, 
-  Eye, 
-  Trash2, 
+import {
+  FileText,
+  Download,
+  Eye,
+  Trash2,
   ArrowLeft,
   Loader2,
   CheckCircle2,
@@ -11,20 +11,26 @@ import {
   Clock,
   AlertCircle,
   Calendar,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
 import { useNavigate } from "react-router"
 import { apiCall } from "../lib/apiCall"
 import { toast } from "react-toastify"
 
+interface ReportMedia {
+  url: string;
+}
+
 interface Report {
   id: number;
-  url: string;
   data_extracted: boolean;
   enqueued: boolean;
   error: boolean;
   errormsg: string;
   created_at: string;
+  reports_media: ReportMedia[];
 }
 
 const ReportsPage = () => {
@@ -32,6 +38,7 @@ const ReportsPage = () => {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
 
   useEffect(() => {
@@ -41,6 +48,7 @@ const ReportsPage = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
+      // Replace with your actual API endpoint
       const response = await apiCall("/user/reports");
       setReports(response);
     } catch (error) {
@@ -52,10 +60,10 @@ const ReportsPage = () => {
 
   const handleDelete = async (reportId: number) => {
     if (!confirm("Are you sure you want to delete this report?")) return;
-    
+
     try {
       setDeleteLoading(reportId);
-    //   await apiCall(`/reports/${reportId}`, { method: 'DELETE' });
+      // await apiCall(`/reports/${reportId}`, { method: 'DELETE' });
       setReports(reports.filter(r => r.id !== reportId));
       toast.success("Report deleted successfully");
     } catch (error) {
@@ -67,10 +75,16 @@ const ReportsPage = () => {
 
   const handleView = (report: Report) => {
     setSelectedReport(report);
+    setSelectedMediaIndex(0);
   };
 
-  const handleDownload = (url: string) => {
-    window.open(url, '_blank');
+  const handleDownloadAll = (report: Report) => {
+    report.reports_media.forEach((media, index) => {
+      setTimeout(() => {
+        window.open(media.url, '_blank');
+      }, index * 100);
+    });
+    toast.success("Downloading all files");
   };
 
   const getStatusBadge = (report: Report) => {
@@ -108,13 +122,25 @@ const ReportsPage = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const navigateMedia = (direction: 'next' | 'prev') => {
+    if (!selectedReport) return;
+
+    if (direction === 'next') {
+      setSelectedMediaIndex((prev) =>
+        prev < selectedReport.reports_media.length - 1 ? prev + 1 : prev
+      );
+    } else {
+      setSelectedMediaIndex((prev) => prev > 0 ? prev - 1 : prev);
+    }
   };
 
   return (
@@ -170,29 +196,41 @@ const ReportsPage = () => {
             {reports.map((report) => (
               <div
                 key={report.id}
-                className={`bg-gray-800/60 backdrop-blur-xl rounded-2xl border transition-all duration-300 hover:shadow-xl overflow-hidden ${
-                  report.error 
-                    ? 'border-red-500/50 hover:border-red-500' 
+                className={`bg-gray-800/60 backdrop-blur-xl rounded-2xl border transition-all duration-300 hover:shadow-xl overflow-hidden ${report.error
+                    ? 'border-red-500/50 hover:border-red-500'
                     : 'border-gray-700 hover:border-gray-600'
-                }`}
+                  }`}
               >
                 {/* Report Preview */}
                 <div className="relative h-48 bg-gray-900/50 flex items-center justify-center overflow-hidden group">
-                  {report.url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
-                    <img 
-                      src={report.url} 
-                      alt="Report preview" 
+                  {report.reports_media.length > 0 && report.reports_media[0].url.match(/\.(jpg|jpeg|png|gif)$/i) ? (
+                    <img
+                      src={report.reports_media[0].url}
+                      alt="Report preview"
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                         e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
                       }}
                     />
-                  ) : null}
-                  <div className="fallback-icon hidden">
-                    <ImageIcon className="text-gray-600" size={64} />
-                  </div>
-                  
+                  ) : (
+                    <div className="fallback-icon">
+                      <ImageIcon className="text-gray-600" size={64} />
+                    </div>
+                  )}
+
+                  {/* Multiple Files Indicator */}
+                  {report.reports_media.length > 1 && (
+                    <div className="absolute top-3 left-3">
+                      <div className="bg-gray-900/90 backdrop-blur-sm rounded-lg px-3 py-1.5 flex items-center space-x-1.5">
+                        <FileText size={14} className="text-blue-400" />
+                        <span className="text-white text-sm font-medium">
+                          {report.reports_media.length} files
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Status Badge Overlay */}
                   <div className="absolute top-3 right-3">
                     <div className="bg-gray-900/90 backdrop-blur-sm rounded-lg px-3 py-1.5">
@@ -210,9 +248,9 @@ const ReportsPage = () => {
                       <Eye size={20} />
                     </button>
                     <button
-                      onClick={() => handleDownload(report.url)}
+                      onClick={() => handleDownloadAll(report)}
                       className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg transition-colors"
-                      title="Download"
+                      title="Download All"
                     >
                       <Download size={20} />
                     </button>
@@ -259,7 +297,7 @@ const ReportsPage = () => {
                     <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-lg p-3">
                       <div className="flex items-center space-x-2">
                         <Loader2 className="text-yellow-400 animate-spin shrink-0" size={16} />
-                        <p className="text-yellow-400 text-sm">Processing your report...</p>
+                        <p className="text-yellow-400 text-sm">Processing {report.reports_media.length} file(s)...</p>
                       </div>
                     </div>
                   )}
@@ -282,16 +320,21 @@ const ReportsPage = () => {
 
       {/* View Modal */}
       {selectedReport && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={() => setSelectedReport(null)}
         >
-          <div 
-            className="bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto border border-gray-700"
+          <div
+            className="bg-gray-800 rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-auto border border-gray-700"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">Report #{selectedReport.id}</h3>
+            <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between z-10">
+              <div>
+                <h3 className="text-xl font-bold text-white">Report #{selectedReport.id}</h3>
+                <p className="text-sm text-gray-400">
+                  Viewing {selectedMediaIndex + 1} of {selectedReport.reports_media.length}
+                </p>
+              </div>
               <button
                 onClick={() => setSelectedReport(null)}
                 className="text-gray-400 hover:text-white transition-colors"
@@ -299,17 +342,62 @@ const ReportsPage = () => {
                 <XCircle size={24} />
               </button>
             </div>
-            <div className="p-6">
-              <img 
-                src={selectedReport.url} 
-                alt="Report" 
+
+            <div className="p-6 relative">
+              <img
+                src={selectedReport.reports_media[selectedMediaIndex].url}
+                alt={`Report page ${selectedMediaIndex + 1}`}
                 className="w-full rounded-lg"
                 onError={(e) => {
                   e.currentTarget.src = '';
                   e.currentTarget.alt = 'Failed to load image';
                 }}
               />
+
+              {/* Navigation Arrows */}
+              {selectedReport.reports_media.length > 1 && (
+                <>
+                  <button
+                    onClick={() => navigateMedia('prev')}
+                    disabled={selectedMediaIndex === 0}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-gray-900/90 hover:bg-gray-900 text-white p-3 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <button
+                    onClick={() => navigateMedia('next')}
+                    disabled={selectedMediaIndex === selectedReport.reports_media.length - 1}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-900/90 hover:bg-gray-900 text-white p-3 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </>
+              )}
             </div>
+
+            {/* Thumbnails */}
+            {selectedReport.reports_media.length > 1 && (
+              <div className="border-t border-gray-700 p-4">
+                <div className="flex space-x-2 overflow-x-auto">
+                  {selectedReport.reports_media.map((media, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedMediaIndex(index)}
+                      className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${index === selectedMediaIndex
+                          ? 'border-blue-500 scale-105'
+                          : 'border-gray-600 hover:border-gray-500'
+                        }`}
+                    >
+                      <img
+                        src={media.url}
+                        alt={`Thumbnail ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

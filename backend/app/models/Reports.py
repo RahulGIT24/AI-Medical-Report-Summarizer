@@ -9,7 +9,6 @@ class Reports(Base):
     __tablename__="reports"
 
     id:Mapped[int]=mapped_column(Integer, primary_key=True)
-    url:Mapped[str]=mapped_column(String(255), nullable=True)
     owner:Mapped[int]=mapped_column(ForeignKey("users.id"))
 
     # checks/status
@@ -29,13 +28,14 @@ class Reports(Base):
     report_metadata:Mapped["ReportMetaData"] = relationship(back_populates="report",cascade="all, delete-orphan")
     test_results: Mapped[list["TestResults"]] = relationship(back_populates="report", cascade="all, delete-orphan")
     specimen_validity: Mapped["SpecimenValidity"] = relationship(back_populates="report", uselist=False, cascade="all, delete-orphan")
+    reports_media: Mapped[list["ReportsMedia"]] = relationship(back_populates="report", cascade="all, delete-orphan")
     screening_tests: Mapped[list["ScreeningTests"]] = relationship(back_populates="report", cascade="all, delete-orphan")
     confirmation_tests: Mapped[list["ConfirmationTests"]] = relationship(back_populates="report", cascade="all, delete-orphan")
     medications: Mapped[list["ReportedMedications"]] = relationship(back_populates="report", cascade="all, delete-orphan")
 
     @classmethod
     def bulk_create(
-        cls, db: Session, urls: List[str], owner_id: int
+        cls, db: Session, owner_id: int
     ) -> List["Reports"]:
         """Insert multiple reports in one go"""
         report_objects = [

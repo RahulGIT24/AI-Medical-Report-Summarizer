@@ -1,5 +1,5 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException,Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse,StreamingResponse
 import shutil
 from app.lib import BASE_URL
 import uuid
@@ -7,6 +7,7 @@ from app.db import SessionLocal
 from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,ScreeningTests,ConfirmationTests,ReportedMedications
 from app.lib import client,get_query_prompt
 from app.ocr import llm_class
+import json
 from app.models import ReportsMedia
 
 MAPPINGS = {
@@ -80,17 +81,11 @@ async def upload_files(files:list[UploadFile]=File(...)):
     return JSONResponse(status_code=200,content=data)
 
 @router.get("/search")
-async def query_reports(query:str | None):
-    try:    
-        if not query:
-            raise HTTPException(status_code=400, detail="Please provide query to search")
+async def query_reports(query: str):
+    if not query:
+        raise HTTPException(status_code=400, detail="Missing query")
 
-        query = query.strip()
-
-        metadata = [
-
-        ]
-
+    try:
         points = client.similarity_search_collection1(query_str=query,top_k=10,user_id=1)
 
         payloads = [p.payload for p in points]
@@ -100,17 +95,16 @@ async def query_reports(query:str | None):
             with SessionLocal() as db:
                 context.append(MAPPINGS.get(data.get("collection_name")).get_by_id(db=db,id=data.get("collection_id")))
 
-        llm = llm_class(prompt=get_query_prompt(),query_context=context,report_data=None,user_query=query)
+        llm_instance = llm_class(prompt=get_query_prompt(), report_data=None)
 
-        result = llm.call_llm()
-        content = {
-            "query":query,
-            "response":str(result.encode('utf-8').decode('unicode_escape'))
-        }
+        def generate():
+            for token in llm_instance.call_llm_stream(query, q_context=context):
+                # Wrap each token in SSE format
+                yield f"data: {json.dumps({'token': token})}\n\n"
+            yield "event: end\ndata: [DONE]\n\n"
 
-        return JSONResponse(status_code=200,content=content)
-    except HTTPException as e:
-        raise e
+        return StreamingResponse(generate(), media_type="text/event-stream")
+
     except Exception as e:
-        print("Error occured while searching reports ",e)
-        raise HTTPException(status_code=500,detail="Internal Server Error")
+        print("Stream error:", e)
+        raise HTTPException(status_code=500, detail=str(e))

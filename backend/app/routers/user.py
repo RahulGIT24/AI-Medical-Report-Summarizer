@@ -56,7 +56,7 @@ def get_user_reports(user=Depends(get_current_user),db: Session = Depends(get_db
         reports = (
             db.query(Reports)
             .filter(Reports.owner == user["id"])
-            .filter(Reports.enqueued == True)
+            .filter(Reports.enqueued == True, Reports.error == False)
             .order_by(desc(Reports.created_at))
             .all()
         )

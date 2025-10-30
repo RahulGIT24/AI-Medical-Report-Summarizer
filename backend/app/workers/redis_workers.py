@@ -35,7 +35,7 @@ def process_reports(report_ids: list[int]):
                 img=preprocess_image(img_src=report_src)
                 raw_text+=text_extraction(img=img)
 
-            llm = llm_class(report_data=raw_text,prompt=get_extraction_prompt(),query_context=None,user_query=None)
+            llm = llm_class(report_data=raw_text,prompt=get_extraction_prompt())
             llm.set_report_id(rid)
             cleaned_report = llm.call_llm()
 
@@ -162,6 +162,7 @@ def process_reports(report_ids: list[int]):
             Reports.mark_completed(db=db,id=rid)
 
             raw_data_vectorization.enqueue(vectorize_raw_report_data,raw_report_vectorize)
-    except Exception:
+    except Exception as e:
+        print(e)
         db.rollback()
         Reports.mark_error(db=db,errormsg="Unable to Store data",id=rid)

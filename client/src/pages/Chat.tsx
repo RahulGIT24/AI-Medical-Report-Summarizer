@@ -35,33 +35,7 @@ const AIChatInterface = () => {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
     const [sessions, setSessions] = useState<ChatSession[]>([
-        {
-            id: '1',
-            title: 'Blood Test Results',
-            lastMessage: 'What does my cholesterol level mean?',
-            timestamp: new Date('2025-10-23'),
-            messages: [
-                {
-                    id: 'm1',
-                    role: 'user',
-                    content: 'What does my cholesterol level mean?',
-                    timestamp: new Date('2025-10-23T10:30:00')
-                },
-                {
-                    id: 'm2',
-                    role: 'assistant',
-                    content: 'Based on your recent blood test, your total cholesterol is 195 mg/dL, which falls within the desirable range (below 200 mg/dL). Your LDL cholesterol is 120 mg/dL (optimal is below 100 mg/dL) and HDL is 55 mg/dL (optimal is above 60 mg/dL for men). Overall, your cholesterol levels are good, though there\'s slight room for improvement in HDL levels.',
-                    timestamp: new Date('2025-10-23T10:30:15')
-                }
-            ]
-        },
-        {
-            id: '2',
-            title: 'Vitamin D Levels',
-            lastMessage: 'Should I be concerned about my vitamin D?',
-            timestamp: new Date('2025-10-22'),
-            messages: []
-        }
+
     ]);
     const [inputMessage, setInputMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -93,10 +67,15 @@ const AIChatInterface = () => {
         };
         setSessions([newSession, ...sessions]);
         setCurrentSessionId(newSession.id);
+        return newSession.id
     };
 
     const handleSendMessage = async () => {
         if (!inputMessage.trim() || !currentSessionId) return;
+
+        // if(!currentSession) {
+        //     currentSessionId = handleNewChat()
+        // }
 
         const userMessage: Message = {
             id: Date.now().toString(),
@@ -105,15 +84,17 @@ const AIChatInterface = () => {
             timestamp: new Date()
         };
 
-        // Update session with user message
-        setSessions(prevSessions =>
-            prevSessions.map(session =>
+        // Add user's message immediately
+        setSessions(prev =>
+            prev.map(session =>
                 session.id === currentSessionId
                     ? {
                         ...session,
                         messages: [...session.messages, userMessage],
                         lastMessage: inputMessage,
-                        title: session.messages.length === 0 ? inputMessage.slice(0, 30) + '...' : session.title
+                        title: session.messages.length === 0
+                            ? inputMessage.slice(0, 30) + '...'
+                            : session.title
                     }
                     : session
             )
@@ -123,32 +104,78 @@ const AIChatInterface = () => {
         setIsLoading(true);
 
         try {
-            // Simulate API call - replace with actual API call
-            // const response = await apiCall("/ai/chat", { message: inputMessage, sessionId: currentSessionId });
+            // Create an empty assistant message that will fill up as tokens arrive
+            const assistantId = (Date.now() + 1).toString();
+            let partialResponse = '';
 
-            // Simulated response
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            const assistantMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: 'This is a simulated response. Based on your health reports, I can provide insights about your medical data. Please integrate with your actual RAG + LLM backend to get real responses.',
-                timestamp: new Date()
-            };
-
-            setSessions(prevSessions =>
-                prevSessions.map(session =>
+            setSessions(prev =>
+                prev.map(session =>
                     session.id === currentSessionId
-                        ? { ...session, messages: [...session.messages, assistantMessage] }
+                        ? {
+                            ...session,
+                            messages: [
+                                ...session.messages,
+                                {
+                                    id: assistantId,
+                                    role: 'assistant',
+                                    content: '',
+                                    timestamp: new Date()
+                                }
+                            ]
+                        }
                         : session
                 )
             );
+
+            // Use EventSource for Server-Sent Events streaming
+            const evtSource = new EventSource(
+                `${import.meta.env.VITE_BASE_URL}/report/search?query=${encodeURIComponent(inputMessage)}`
+            );
+
+            evtSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    partialResponse += data.token || '';
+
+                    // Update the assistant message in real-time
+                    setSessions(prev =>
+                        prev.map(session =>
+                            session.id === currentSessionId
+                                ? {
+                                    ...session,
+                                    messages: session.messages.map(msg =>
+                                        msg.id === assistantId
+                                            ? { ...msg, content: partialResponse }
+                                            : msg
+                                    )
+                                }
+                                : session
+                        )
+                    );
+                } catch (err) {
+                    console.error('Stream parse error:', err);
+                }
+            };
+
+            evtSource.onerror = (err) => {
+                console.error('Stream error:', err);
+                evtSource.close();
+                setIsLoading(false);
+            };
+
+            // Optional: auto-close when backend stops sending
+            evtSource.addEventListener('end', () => {
+                evtSource.close();
+                setIsLoading(false);
+            });
+
         } catch (error) {
-            toast.error('Failed to get response');
-        } finally {
+            toast.error('Failed to stream response');
+            console.error(error);
             setIsLoading(false);
         }
     };
+
 
     const handleDeleteSession = (sessionId: string) => {
         setSessions(prevSessions => prevSessions.filter(s => s.id !== sessionId));
@@ -201,8 +228,8 @@ const AIChatInterface = () => {
                             key={session.id}
                             onClick={() => setCurrentSessionId(session.id)}
                             className={`group relative p-3 rounded-xl cursor-pointer transition-all duration-200 ${currentSessionId === session.id
-                                    ? 'bg-gray-700/70 border border-blue-500/50'
-                                    : 'bg-gray-700/30 hover:bg-gray-700/50 border border-transparent'
+                                ? 'bg-gray-700/70 border border-blue-500/50'
+                                : 'bg-gray-700/30 hover:bg-gray-700/50 border border-transparent'
                                 }`}
                         >
                             <div className="flex items-start justify-between">
@@ -301,8 +328,8 @@ const AIChatInterface = () => {
                                     <div className={`flex space-x-3 max-w-3xl ${message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                                         {/* Avatar */}
                                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${message.role === 'user'
-                                                ? 'bg-linear-to-br from-blue-500 to-green-500'
-                                                : 'bg-gray-700 border border-gray-600'
+                                            ? 'bg-linear-to-br from-blue-500 to-green-500'
+                                            : 'bg-gray-700 border border-gray-600'
                                             }`}>
                                             {message.role === 'user' ? (
                                                 <User className="text-white" size={20} />
@@ -313,8 +340,8 @@ const AIChatInterface = () => {
 
                                         {/* Message Content */}
                                         <div className={`rounded-2xl p-4 ${message.role === 'user'
-                                                ? 'bg-linear-to-r from-blue-600 to-green-600 text-white'
-                                                : 'bg-gray-800/60 border border-gray-700 text-gray-200'
+                                            ? 'bg-linear-to-r from-blue-600 to-green-600 text-white'
+                                            : 'bg-gray-800/60 border border-gray-700 text-gray-200'
                                             }`}>
                                             <p className="text-sm leading-relaxed whitespace-pre-wrap">
                                                 {message.content}

@@ -3,6 +3,7 @@ from app.lib import llm
 import json
 import re
 from app.db import SessionLocal
+from fastapi.responses import StreamingResponse
 from app.models import Reports
 
 class llm_class:
@@ -11,18 +12,11 @@ class llm_class:
     report_data = None
     report_id = None
 
-    user_query=None
-    query_context=None
-
-    def __init__(self,prompt:str,report_data=None,user_query=None,query_context=None):
+    def __init__(self,prompt:str,report_data=None):
       self.prompt = prompt
 
       if report_data:
         self.report_data=report_data
-      
-      if user_query and query_context:
-          self.user_query = user_query
-          self.query_context = query_context
 
     def chain_prompt(self):
       self.prompt_template = PromptTemplate.from_template(self.prompt)
@@ -76,7 +70,12 @@ class llm_class:
           final_text=removedPrefix.removesuffix("```")
           json_text=json.loads(final_text)
           return json_text
-        
-        if self.user_query and self.query_context:
-          result = response.invoke({"query": self.user_query,"search_results":self.query_context})
-          return result.content
+    
+    def call_llm_stream(self, user_q, q_context):
+        self.chain_prompt()
+        response = self.prompt_template | llm  # Groq pipeline
+
+        # Directly yield content chunks
+        for chunk in response.stream({"query": user_q, "search_results": q_context}):
+            if chunk and getattr(chunk, "content", None):
+                yield chunk.content

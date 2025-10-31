@@ -12,177 +12,184 @@ import {
     User,
 } from "lucide-react"
 import { useNavigate } from "react-router"
-// import { apiCall } from "../lib/apiCall"
+import { apiCall } from "../lib/apiCall"
 import { toast } from "react-toastify"
 
 interface Message {
     id: string;
     role: 'user' | 'assistant';
     content: string;
-    timestamp: Date;
+    timestamp: string;
 }
 
 interface ChatSession {
     id: string;
     title: string;
-    lastMessage: string;
-    timestamp: Date;
-    messages: Message[];
+    timestamp: string;
 }
 
 const AIChatInterface = () => {
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
-    const [sessions, setSessions] = useState<ChatSession[]>([
-
-    ]);
+    const currentSessionRef = useRef<string | null>(null);
+    const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [inputMessage, setInputMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [currentSession, setCurrentSession] = useState<ChatSession | null>(null)
+
+    const [messages, setMessages] = useState<Message[]>([])
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const currentSession = sessions.find(s => s.id === currentSessionId);
-
-    useEffect(() => {
-        if (sessions.length > 0 && !currentSessionId) {
-            setCurrentSessionId(sessions[0].id);
+    const fetchSessions = async () => {
+        try {
+            const res = await apiCall("/chat/session", "GET")
+            setSessions(res.sessions)
+        } catch (error) {
+            toast.error("Error while fetching sessions")
         }
-    }, [sessions, currentSessionId]);
+    }
 
     useEffect(() => {
         scrollToBottom();
-    }, [currentSession?.messages]);
+    }, [messages]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
     const handleNewChat = () => {
-        const newSession: ChatSession = {
-            id: Date.now().toString(),
-            title: 'New Chat',
-            lastMessage: '',
-            timestamp: new Date(),
-            messages: []
-        };
-        setSessions([newSession, ...sessions]);
-        setCurrentSessionId(newSession.id);
-        return newSession.id
+        currentSessionRef.current = null;
+        setCurrentSession(null)
+        setMessages([])
+    };
+
+    const formatTimestamp = (timestamp: string) => {
+        if (!timestamp) return "";
+        const date = new Date(timestamp);
+        return date.toLocaleString("en-IN", {
+            weekday: "short", // "Mon"
+            day: "2-digit",   // "31"
+            month: "short",   // "Oct"
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,     // "10:45 AM"
+        });
     };
 
     const handleSendMessage = async () => {
-        if (!inputMessage.trim() || !currentSessionId) return;
+        if (!inputMessage.trim()) return;
 
-        // if(!currentSession) {
-        //     currentSessionId = handleNewChat()
-        // }
-
-        const userMessage: Message = {
-            id: Date.now().toString(),
-            role: 'user',
-            content: inputMessage,
-            timestamp: new Date()
-        };
-
-        // Add user's message immediately
-        setSessions(prev =>
-            prev.map(session =>
-                session.id === currentSessionId
-                    ? {
-                        ...session,
-                        messages: [...session.messages, userMessage],
-                        lastMessage: inputMessage,
-                        title: session.messages.length === 0
-                            ? inputMessage.slice(0, 30) + '...'
-                            : session.title
-                    }
-                    : session
-            )
-        );
-
-        setInputMessage('');
         setIsLoading(true);
 
         try {
-            // Create an empty assistant message that will fill up as tokens arrive
-            const assistantId = (Date.now() + 1).toString();
-            let partialResponse = '';
+            // Step 1: Ensure session exists
+            let sessionId = currentSessionRef.current;
 
+            if (!sessionId) {
+                // Create new chat session on backend
+                const title = inputMessage.slice(0, 30) + "...";
+                const res = await apiCall("/chat/session", "POST", { name: title });
+
+                // Save the new session locally
+                const newSession: ChatSession = {
+                    id: res.id,
+                    title: title,
+                    timestamp: (new Date).toString(),
+                };
+
+                setSessions(prev => [newSession, ...prev]);
+                setCurrentSession(newSession)
+                currentSessionRef.current = res.id;
+                sessionId = res.id;
+            }
+
+            const userMessage: Message = {
+                id: Date.now().toString(),
+                role: "user",
+                content: inputMessage,
+                timestamp: (new Date).toString(),
+            };
+
+            setMessages(prev => [...prev, userMessage])
+
+            // Step 2: Add user message to the session
             setSessions(prev =>
                 prev.map(session =>
-                    session.id === currentSessionId
+                    session.id === sessionId
                         ? {
                             ...session,
-                            messages: [
-                                ...session.messages,
-                                {
-                                    id: assistantId,
-                                    role: 'assistant',
-                                    content: '',
-                                    timestamp: new Date()
-                                }
-                            ]
                         }
                         : session
                 )
             );
 
-            // Use EventSource for Server-Sent Events streaming
+            setInputMessage("");
+
+            // Step 3: Create placeholder assistant message
+            const assistantId = (Date.now() + 1).toString();
+            let partialResponse = "";
+
+            const newMessage: Message = {
+                id: assistantId,
+                role: "assistant",
+                content: "",
+                timestamp: (new Date).toString(),
+            }
+
+            setMessages(prev => [...prev, newMessage]);
+
+
+            // Step 4: Start SSE stream
             const evtSource = new EventSource(
-                `${import.meta.env.VITE_BASE_URL}/report/search?query=${encodeURIComponent(inputMessage)}`
+                `${import.meta.env.VITE_BASE_URL}/report/search?query=${encodeURIComponent(inputMessage)}`,
+                { withCredentials: true }
             );
 
             evtSource.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    partialResponse += data.token || '';
-
-                    // Update the assistant message in real-time
-                    setSessions(prev =>
-                        prev.map(session =>
-                            session.id === currentSessionId
-                                ? {
-                                    ...session,
-                                    messages: session.messages.map(msg =>
-                                        msg.id === assistantId
-                                            ? { ...msg, content: partialResponse }
-                                            : msg
-                                    )
-                                }
-                                : session
-                        )
+                    partialResponse += data.token || "";
+                    setMessages(prev =>
+                        Array.isArray(prev)
+                            ? prev.map(m =>
+                                m.id === assistantId
+                                    ? { ...m, content: partialResponse }
+                                    : m
+                            )
+                            : []
                     );
                 } catch (err) {
-                    console.error('Stream parse error:', err);
+                    console.error("Stream parse error:", err);
                 }
             };
 
             evtSource.onerror = (err) => {
-                console.error('Stream error:', err);
+                console.error("Stream error:", err);
                 evtSource.close();
                 setIsLoading(false);
             };
 
-            // Optional: auto-close when backend stops sending
-            evtSource.addEventListener('end', () => {
+            evtSource.addEventListener("end", () => {
                 evtSource.close();
                 setIsLoading(false);
             });
 
         } catch (error) {
-            toast.error('Failed to stream response');
-            console.error(error);
+            console.error("Error while sending message:", error);
+            toast.error("Something went wrong while sending message");
             setIsLoading(false);
         }
     };
 
-
-    const handleDeleteSession = (sessionId: string) => {
-        setSessions(prevSessions => prevSessions.filter(s => s.id !== sessionId));
-        if (currentSessionId === sessionId) {
-            setCurrentSessionId(sessions[0]?.id || null);
+    const handleDeleteSession = async(sessionId: string) => {
+        if (await deleteSession(sessionId)) {
+            setSessions(prevSessions => prevSessions.filter(s => s.id !== sessionId));
+            if (currentSessionRef.current === sessionId) {
+                currentSessionRef.current = (sessions[0]?.id || null);
+            }
         }
-        toast.success('Chat session deleted');
     };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -192,11 +199,26 @@ const AIChatInterface = () => {
         }
     };
 
+    useEffect(() => {
+        fetchSessions()
+    }, [currentSessionRef.current])
+
+    const deleteSession = async (id: string) => {
+        try {
+            const res = await apiCall(`/chat/session?id=${id}`, "DELETE")
+            toast.success(res.message);
+            return true
+        } catch (error) {
+            toast.error("Unable to delete session")
+            return false
+        }
+    }
+
     return (
         <div className="h-screen bg-linear-to-br from-gray-900 via-slate-900 to-gray-900 flex overflow-hidden">
 
             {/* Sidebar */}
-            <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-gray-800/60 backdrop-blur-xl border-r border-gray-700 flex flex-col overflow-hidden`}>
+            <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-gray-800/60 backdrop-blur-xl border-r border-gray-700 flex flex-col overflow-auto`}>
 
                 {/* Sidebar Header */}
                 <div className="p-4 border-b border-gray-700">
@@ -226,8 +248,11 @@ const AIChatInterface = () => {
                     {sessions.map((session) => (
                         <div
                             key={session.id}
-                            onClick={() => setCurrentSessionId(session.id)}
-                            className={`group relative p-3 rounded-xl cursor-pointer transition-all duration-200 ${currentSessionId === session.id
+                            onClick={() => {
+                                currentSessionRef.current = session.id
+                                setCurrentSession(session)
+                            }}
+                            className={`group relative p-3 rounded-xl cursor-pointer transition-all duration-200 ${currentSession == session
                                 ? 'bg-gray-700/70 border border-blue-500/50'
                                 : 'bg-gray-700/30 hover:bg-gray-700/50 border border-transparent'
                                 }`}
@@ -241,10 +266,10 @@ const AIChatInterface = () => {
                                         </h4>
                                     </div>
                                     <p className="text-xs text-gray-400 truncate">
-                                        {session.lastMessage || 'No messages yet'}
+                                        {/* {session.lastMessage || 'No messages yet'} */}
                                     </p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                        {session.timestamp.toLocaleDateString()}
+                                        {formatTimestamp(session.timestamp)}
                                     </p>
                                 </div>
                                 <button
@@ -293,7 +318,7 @@ const AIChatInterface = () => {
 
                 {/* Messages Area */}
                 <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
-                    {!currentSession?.messages.length ? (
+                    {!messages?.length ? (
                         <div className="h-full flex items-center justify-center">
                             <div className="text-center space-y-4 max-w-md">
                                 <div className="w-20 h-20 bg-linear-to-br from-blue-500 to-green-500 rounded-2xl flex items-center justify-center mx-auto">
@@ -320,7 +345,7 @@ const AIChatInterface = () => {
                         </div>
                     ) : (
                         <>
-                            {currentSession.messages.map((message) => (
+                            {messages?.filter(m => m.content != "").map((message) => (
                                 <div
                                     key={message.id}
                                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
@@ -347,7 +372,7 @@ const AIChatInterface = () => {
                                                 {message.content}
                                             </p>
                                             <p className={`text-xs mt-2 ${message.role === 'user' ? 'text-blue-100' : 'text-gray-500'}`}>
-                                                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {formatTimestamp(message.timestamp)}
                                             </p>
                                         </div>
                                     </div>

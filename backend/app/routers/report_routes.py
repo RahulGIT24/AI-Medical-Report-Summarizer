@@ -1,8 +1,9 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException,Query
+from fastapi import APIRouter, File, UploadFile, HTTPException,Query,Depends
 from fastapi.responses import JSONResponse,StreamingResponse
 import shutil
 from app.lib import BASE_URL
 import uuid
+from app.middleware import get_current_user
 from app.db import SessionLocal
 from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,ScreeningTests,ConfirmationTests,ReportedMedications
 from app.lib import client,get_query_prompt
@@ -26,9 +27,9 @@ router=APIRouter(prefix="/report")
 allowed_extensions = ['jpeg','jpg','png']
 
 @router.post("/upload")
-async def upload_files(files:list[UploadFile]=File(...)):
+async def upload_files(files:list[UploadFile]=File(...),user=Depends(get_current_user)):
     try:
-        user_id=1
+        user_id=user["id"]
         if len(files)==1 and files[0].filename == "":
             raise HTTPException(detail="Please Provide files to upload", status_code=400)
 
@@ -71,7 +72,7 @@ async def upload_files(files:list[UploadFile]=File(...)):
     except HTTPException as e:
         raise e
     except Exception as e:
-        print("Error occured while uploading reports ",e)
+        print("Error occured while uploading repuser=Depends(get_current_user)orts ",e)
         raise HTTPException(status_code=500,detail="Internal Server Error")
 
     
@@ -81,7 +82,8 @@ async def upload_files(files:list[UploadFile]=File(...)):
     return JSONResponse(status_code=200,content=data)
 
 @router.get("/search")
-async def query_reports(query: str):
+async def query_reports(query: str,user=Depends(get_current_user)):
+    user_id=user["id"]
     if not query:
         raise HTTPException(status_code=400, detail="Missing query")
 

@@ -57,6 +57,7 @@ class Qdrant:
             collection_name=QDRANT_COLLECTION_1,
             query=embeddings,
             limit=top_k,
+            score_threshold=0.75,
             with_payload=True,
             query_filter=models.Filter(
                 must=[

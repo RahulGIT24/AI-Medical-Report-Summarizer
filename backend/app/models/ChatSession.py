@@ -37,3 +37,12 @@ class ChatSession(Base):
         ]
 
         return readable_list
+
+    @classmethod
+    def delete(cls,db: Session, id: int, user_id:int):
+        res = (db.query(cls).filter(cls.id == id,cls.user_id==user_id).first())
+        if not res:
+            return None
+        db.delete(res)
+        db.commit()
+        return True

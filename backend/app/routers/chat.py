@@ -54,5 +54,24 @@ async def fetch_sessions(page:int=1,user=Depends(get_current_user),db: Session =
     except Exception as e:
         print("Error occured while creating session ",e)
         raise HTTPException(status_code=500,detail="Internal Server Error")
+    
+@router.delete("/session")
+async def fetch_sessions(id:int,user=Depends(get_current_user),db: Session = Depends(get_db)):
+    try:
+        user_id=user["id"]
+        deleted = ChatSession.delete(
+            user_id=user_id,
+            db=db,
+            id=id,
+        )
+        if deleted==None:
+            return HTTPException(status_code=404,detail="Session not found")
+        return {"message": "Session Deleted"}
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print("Error occured while creating session ",e)
+        raise HTTPException(status_code=500,detail="Internal Server Error")
 
 # @router.get("/chats")

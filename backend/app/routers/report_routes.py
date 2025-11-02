@@ -5,11 +5,10 @@ from app.lib import BASE_URL
 import uuid
 from app.middleware import get_current_user
 from app.db import SessionLocal
-from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,ScreeningTests,ConfirmationTests,ReportedMedications
+from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,ScreeningTests,ConfirmationTests,ReportedMedications,ReportsMedia, Chat
 from app.lib import client,get_query_prompt
 from app.ocr import llm_class
 import json
-from app.models import ReportsMedia
 
 MAPPINGS = {
     "specimen_validity":SpecimenValidity,
@@ -82,12 +81,25 @@ async def upload_files(files:list[UploadFile]=File(...),user=Depends(get_current
     return JSONResponse(status_code=200,content=data)
 
 @router.get("/search")
-async def query_reports(query: str,user=Depends(get_current_user)):
+async def query_reports(query: str,session_id:str,user=Depends(get_current_user)):
     user_id=user["id"]
     if not query:
         raise HTTPException(status_code=400, detail="Missing query")
 
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Session not specified")
+
     try:
+
+        with SessionLocal() as db:
+            user_c = Chat(
+                session=session_id,
+                content=query,
+                role="user",
+            )
+            db.add(user_c)
+            db.commit()
+
         points = client.similarity_search_collection1(query_str=query,top_k=10,user_id=1)
 
         payloads = [p.payload for p in points]
@@ -98,11 +110,22 @@ async def query_reports(query: str,user=Depends(get_current_user)):
                 context.append(MAPPINGS.get(data.get("collection_name")).get_by_id(db=db,id=data.get("collection_id")))
 
         llm_instance = llm_class(prompt=get_query_prompt(), report_data=None)
+        response_buffer = []  
 
         def generate():
             for token in llm_instance.call_llm_stream(query, q_context=context):
-                # Wrap each token in SSE format
+                response_buffer.append(token)
                 yield f"data: {json.dumps({'token': token})}\n\n"
+            full_response = "".join(response_buffer)
+            with SessionLocal() as db:
+                assistant = Chat(
+                    session=session_id,
+                    content=full_response,
+                    role="assistant",
+                )
+            db.add(assistant)
+            db.commit()
+
             yield "event: end\ndata: [DONE]\n\n"
 
         return StreamingResponse(generate(), media_type="text/event-stream")

@@ -13,3 +13,22 @@ class Chat(Base):
     timestamp:Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     chat_session = relationship("ChatSession", back_populates="chats")
+
+    @classmethod
+    def get_chats(cls, db: Session, session_id: int):
+            chats = (
+                db.query(cls)
+                .filter(cls.session == session_id)
+                .order_by(cls.timestamp.asc())
+                .all()
+            )
+
+            if not chats:
+                return []
+
+            readable_list = [
+                {c.name: getattr(session, c.name) for c in cls.__table__.columns}
+                for session in chats
+            ]
+
+            return readable_list

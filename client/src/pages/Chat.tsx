@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import { useNavigate } from "react-router"
 import { apiCall } from "../lib/apiCall"
+import { useSearchParams } from 'react-router-dom';
 import { toast } from "react-toastify"
 
 interface Message {
@@ -30,6 +31,7 @@ interface ChatSession {
 
 const AIChatInterface = () => {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const currentSessionRef = useRef<string | null>(null);
     const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -40,6 +42,10 @@ const AIChatInterface = () => {
     const [messages, setMessages] = useState<Message[]>([])
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        fetchSessions()
+    }, [])
 
     const fetchSessions = async () => {
         try {
@@ -62,6 +68,10 @@ const AIChatInterface = () => {
         currentSessionRef.current = null;
         setCurrentSession(null)
         setMessages([])
+        setSearchParams((prevParams) => {
+            prevParams.delete('session_id'); 
+            return prevParams;
+        });
     };
 
     const formatTimestamp = (timestamp: string) => {
@@ -79,6 +89,7 @@ const AIChatInterface = () => {
     };
 
     const handleSendMessage = async () => {
+        // if(!currentSession) return;
         if (!inputMessage.trim()) return;
 
         setIsLoading(true);
@@ -100,8 +111,8 @@ const AIChatInterface = () => {
                 };
 
                 setSessions(prev => [newSession, ...prev]);
-                setCurrentSession(newSession)
-                currentSessionRef.current = res.id;
+                // setCurrentSession(newSession)
+                // currentSessionRef.current = res.id;
                 sessionId = res.id;
             }
 
@@ -143,7 +154,7 @@ const AIChatInterface = () => {
 
             // Step 4: Start SSE stream
             const evtSource = new EventSource(
-                `${import.meta.env.VITE_BASE_URL}/report/search?query=${encodeURIComponent(inputMessage)}`,
+                `${import.meta.env.VITE_BASE_URL}/report/search?query=${encodeURIComponent(inputMessage)}&session_id=${sessionId}`,
                 { withCredentials: true }
             );
 
@@ -172,6 +183,11 @@ const AIChatInterface = () => {
             };
 
             evtSource.addEventListener("end", () => {
+                if (sessionId) {
+                    if (!searchParams.get("session_id")) {
+                        setSearchParams({ "session_id": sessionId })
+                    }
+                }
                 evtSource.close();
                 setIsLoading(false);
             });
@@ -183,7 +199,7 @@ const AIChatInterface = () => {
         }
     };
 
-    const handleDeleteSession = async(sessionId: string) => {
+    const handleDeleteSession = async (sessionId: string) => {
         if (await deleteSession(sessionId)) {
             setSessions(prevSessions => prevSessions.filter(s => s.id !== sessionId));
             if (currentSessionRef.current === sessionId) {
@@ -199,10 +215,6 @@ const AIChatInterface = () => {
         }
     };
 
-    useEffect(() => {
-        fetchSessions()
-    }, [currentSessionRef.current])
-
     const deleteSession = async (id: string) => {
         try {
             const res = await apiCall(`/chat/session?id=${id}`, "DELETE")
@@ -213,6 +225,31 @@ const AIChatInterface = () => {
             return false
         }
     }
+
+    const fetchChats = async () => {
+        if (!currentSessionRef.current) return;
+        try {
+            const res = await apiCall(`/chat/chats?session_id=${currentSessionRef.current}`)
+            setMessages(res.chats);
+        } catch (error) {
+            toast.error("Error while fetching chats")
+        }
+    }
+
+    useEffect(() => {
+        fetchChats()
+    }, [currentSessionRef.current])
+
+    useEffect(() => {
+        // if (!sessionId) return;
+        if (searchParams.get("session_id")) {
+            currentSessionRef.current = searchParams.get("session_id")
+            const session = sessions.filter(s => s.id == searchParams.get("session_id"))[0]
+            if (session) {
+                setCurrentSession(session)
+            }
+        }
+    }, [searchParams])
 
     return (
         <div className="h-screen bg-linear-to-br from-gray-900 via-slate-900 to-gray-900 flex overflow-hidden">
@@ -249,8 +286,8 @@ const AIChatInterface = () => {
                         <div
                             key={session.id}
                             onClick={() => {
-                                currentSessionRef.current = session.id
-                                setCurrentSession(session)
+                                setSearchParams({ "session_id": session.id })
+                                // setCurrentSession(session)
                             }}
                             className={`group relative p-3 rounded-xl cursor-pointer transition-all duration-200 ${currentSession == session
                                 ? 'bg-gray-700/70 border border-blue-500/50'
@@ -385,8 +422,8 @@ const AIChatInterface = () => {
                                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gray-700 border border-gray-600">
                                             <Bot className="text-blue-400" size={20} />
                                         </div>
-                                        <div className="bg-gray-800/60 border border-gray-700 rounded-2xl p-4">
-                                            <Loader2 className="animate-spin text-blue-400" size={20} />
+                                        <div className="rounded-2xl p-4 flex justify-center items-center">
+                                            <Loader2 className="animate-spin" size={20} color="white" />
                                         </div>
                                     </div>
                                 </div>
@@ -418,7 +455,7 @@ const AIChatInterface = () => {
                                 className="bg-linear-to-r from-blue-600 to-green-600 text-white p-4 rounded-xl hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
                             >
                                 {isLoading ? (
-                                    <Loader2 className="animate-spin" size={24} />
+                                    <Loader2 className="animate-spin" color="white" size={24} />
                                 ) : (
                                     <Send size={24} />
                                 )}

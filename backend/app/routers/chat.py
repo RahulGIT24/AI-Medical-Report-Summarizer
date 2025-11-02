@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from app.db import get_db
 from app.middleware import get_current_user
 from app.db import SessionLocal
-from app.models import ChatSession
+from app.models import ChatSession, Chat
 from app.lib import client,get_query_prompt
 from app.ocr import llm_class
 import json
@@ -56,7 +56,7 @@ async def fetch_sessions(page:int=1,user=Depends(get_current_user),db: Session =
         raise HTTPException(status_code=500,detail="Internal Server Error")
     
 @router.delete("/session")
-async def fetch_sessions(id:int,user=Depends(get_current_user),db: Session = Depends(get_db)):
+async def delete_session(id:int,user=Depends(get_current_user),db: Session = Depends(get_db)):
     try:
         user_id=user["id"]
         deleted = ChatSession.delete(
@@ -74,4 +74,13 @@ async def fetch_sessions(id:int,user=Depends(get_current_user),db: Session = Dep
         print("Error occured while creating session ",e)
         raise HTTPException(status_code=500,detail="Internal Server Error")
 
-# @router.get("/chats")
+@router.get("/chats")
+async def fetch_chats(session_id:int,user=Depends(get_current_user),db: Session = Depends(get_db)):
+    try:
+        chats=Chat.get_chats(db=db,session_id=session_id)
+        return {"chats": chats}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print("Error occured while creating session ",e)
+        raise HTTPException(status_code=500,detail="Internal Server Error")

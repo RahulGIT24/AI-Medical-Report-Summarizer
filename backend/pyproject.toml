@@ -28,6 +28,7 @@ dependencies = [
     "rq>=2.6.0",
     "sqlalchemy>=2.0.43",
     "sqlalchemy-utils>=0.42.0",
+    "toon-python>=0.1.2",
     "uuid>=1.30",
     "uvicorn>=0.37.0",
 ]

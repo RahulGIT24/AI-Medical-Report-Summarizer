@@ -32,3 +32,23 @@ class Chat(Base):
             ]
 
             return readable_list
+
+    @classmethod
+    def get_chats_for_context(cls, db: Session, session_id: int, limit:int):
+            chats = (
+                db.query(cls)
+                .filter(cls.session == session_id)
+                .order_by(cls.timestamp.desc())
+                .limit(limit)
+                .all()
+            )
+
+            if not chats:
+                return []
+
+            readable_list = [
+                {c.name: getattr(session, c.name) for c in cls.__table__.columns}
+                for session in chats
+            ]
+
+            return readable_list

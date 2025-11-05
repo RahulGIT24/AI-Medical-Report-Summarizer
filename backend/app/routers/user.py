@@ -22,14 +22,14 @@ def get_user_stats(user=Depends(get_current_user),db: Session = Depends(get_db))
             .order_by(desc(Reports.created_at))
             .first()
         )
-        if last_report:
-            now = datetime.utcnow()
-            days_ago = (now - last_report.created_at).days
+        if not last_report:
+            return JSONResponse(status_code=200,content={"count":0,"days_ago":0,"queries":0})
+        now = datetime.utcnow()
+        days_ago = (now - last_report.created_at).days
         return JSONResponse(status_code=200,content={"count":count,"days_ago":days_ago,"queries":0})
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(e)
         raise HTTPException(status_code=500, detail="Something went wrong")
 
 @router.get('/reports',response_model=List[ReportSchema])

@@ -70,12 +70,6 @@ class Qdrant:
     
     def similarity_search_collection1(self,user_id,query_str,top_k=5):
         try:
-            dense_embedder = self.get_dense_embedder()
-            dense_embeddings=list(dense_embedder.embed(query_str))[0]
-
-            sparse_embedder = self.get_sparse_embedder()
-            sparse_embeddings = sparse_embedder.embed(query_str)
-
             search_res = self.client.query_points(
                 collection_name=QDRANT_COLLECTION_1,
                 prefetch=[

@@ -107,6 +107,23 @@ class Qdrant:
             print(e)
             return None
 
+    def delete_embeddings(self,report_ids):
+        collection = QDRANT_COLLECTION_1
+        self.client.delete(
+            collection_name=collection,
+            points_selector=models.FilterSelector(
+                filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="report_id",
+                            match=models.MatchAny(any=report_ids)
+                        )
+                    ]
+                )
+            )
+        )
+        print("Deleted report embeddings successfully for report ids",report_ids[:10])
+
 
     def __del__(self):
         del self.client

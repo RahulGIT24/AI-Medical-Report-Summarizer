@@ -1,3 +1,4 @@
+from exceptiongroup import catch
 from fastapi import APIRouter, File, UploadFile, HTTPException,Depends
 from fastapi.responses import JSONResponse,StreamingResponse
 import shutil
@@ -135,3 +136,17 @@ async def query_reports(query: str,session_id:str,user=Depends(get_current_user)
     except Exception as e:
         print("Stream error:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/{report_id}")
+async def delete_report(report_id:str,user=Depends(get_current_user)):
+    try:
+        with SessionLocal() as db:
+            deleted = Reports.delete(db=db,id=report_id,user_id=user["id"])
+            if deleted:
+                return JSONResponse(status_code=200,content={"message":"Report Deleted Successfully"})
+        return HTTPException(status_code=400, detail="Invalid Report Id")
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print("Error Occured while deleting report", e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")

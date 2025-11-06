@@ -7,7 +7,7 @@ class ConfirmationTests(Base):
     __tablename__ = "confirmation_tests"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), nullable=True)
+    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id",ondelete="CASCADE"), nullable=True)
     
     test_name: Mapped[str] = mapped_column(String(255), nullable=True)
     method: Mapped[str] = mapped_column(String(100), nullable=True)  # "LC-MS/MS", "GC-MS", etc.

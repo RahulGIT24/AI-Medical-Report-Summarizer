@@ -16,6 +16,7 @@ class Reports(Base):
     enqueued:Mapped[bool]=mapped_column(Boolean, default=0)
     error:Mapped[bool]=mapped_column(Boolean, default=0)
     errormsg:Mapped[str]=mapped_column(Text, default="")
+    deleted:Mapped[bool]=mapped_column(Boolean,default=False)
 
     created_at: Mapped[datetime] = mapped_column(
     DateTime, default=datetime.utcnow, server_default=func.now()
@@ -48,7 +49,7 @@ class Reports(Base):
 
     @classmethod
     def get_report(cls,db:Session,id:int):
-        report = db.query(cls).filter(cls.id == id).first()
+        report = db.query(cls).filter(cls.id == id,cls.deleted==False).first()
         if not report:
             return None
         if report.error or report.data_extracted:
@@ -57,7 +58,7 @@ class Reports(Base):
 
     @classmethod
     def mark_error(cls,db:Session,id:int,errormsg:str):
-        report = db.query(cls).filter(cls.id == id).first()
+        report = db.query(cls).filter(cls.id == id,cls.deleted==False).first()
         if report:
             report.error = 1
             report.enqueued = 0
@@ -68,8 +69,17 @@ class Reports(Base):
         return report
 
     @classmethod
+    def delete(cls, db: Session, id: int, user_id: int):
+        report = db.query(cls).filter(cls.id == id, cls.deleted == False).first()
+        if report:
+            report.deleted = True
+            db.commit()
+            db.refresh(report)
+        return report
+
+    @classmethod
     def mark_completed(cls,db:Session,id:int):
-        report = db.query(cls).filter(cls.id == id).first()
+        report = db.query(cls).filter(cls.id == id,cls.deleted==False).first()
         if report:
             report.data_extracted = 1
             report.enqueued = 0
@@ -77,4 +87,3 @@ class Reports(Base):
             db.commit()
             db.refresh(report)
         return report
-    

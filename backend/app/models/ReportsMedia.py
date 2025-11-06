@@ -9,7 +9,7 @@ class ReportsMedia(Base):
     __tablename__ = "reports_media"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), nullable=False)
+    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id",ondelete="CASCADE"), nullable=False)
     url:Mapped[str] = mapped_column(String,nullable=False)
     report: Mapped["Reports"] = relationship(back_populates="reports_media")
 

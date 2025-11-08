@@ -1,3 +1,5 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -32,8 +34,7 @@ def enqueue_pending_reports():
     except Exception as e:
       print('An exception occurred while enqueing',e)
 
-
-if __name__ == "__main__":
+def scheduler_enqueue():
     while True:
         enqueue_pending_reports()
-        time.sleep(5) 
+        time.sleep(5)

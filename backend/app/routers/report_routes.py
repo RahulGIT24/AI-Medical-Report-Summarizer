@@ -1,4 +1,5 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException,Query,Depends
+from exceptiongroup import catch
+from fastapi import APIRouter, File, UploadFile, HTTPException,Depends
 from fastapi.responses import JSONResponse,StreamingResponse
 import shutil
 from app.lib import BASE_URL
@@ -9,6 +10,7 @@ from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,Scree
 from app.lib import client,get_query_prompt
 from app.ocr import llm_class
 import json
+from toon_python import encode
 
 MAPPINGS = {
     "specimen_validity":SpecimenValidity,
@@ -89,9 +91,11 @@ async def query_reports(query: str,session_id:str,user=Depends(get_current_user)
     if not session_id:
         raise HTTPException(status_code=400, detail="Session not specified")
 
-    try:
+    global previous_chats
 
+    try:
         with SessionLocal() as db:
+            previous_chats = Chat.get_chats_for_context(limit=6,db=db,session_id=session_id)
             user_c = Chat(
                 session=session_id,
                 content=query,
@@ -101,19 +105,18 @@ async def query_reports(query: str,session_id:str,user=Depends(get_current_user)
             db.commit()
 
         points = client.similarity_search_collection1(query_str=query,top_k=10,user_id=1)
-
-        payloads = [p.payload for p in points]
-        
         context = []
-        for data in payloads:
-            with SessionLocal() as db:
-                context.append(MAPPINGS.get(data.get("collection_name")).get_by_id(db=db,id=data.get("collection_id")))
+        response_buffer = []
+
+        if points is not None:
+            payloads = [p.payload for p in points]
+            for data in payloads:
+                with SessionLocal() as db:
+                    context.append(MAPPINGS.get(data.get("collection_name")).get_by_id(db=db,id=data.get("collection_id")))
 
         llm_instance = llm_class(prompt=get_query_prompt(), report_data=None)
-        response_buffer = []  
-
         def generate():
-            for token in llm_instance.call_llm_stream(query, q_context=context):
+            for token in llm_instance.call_llm_stream(query, q_context=encode(context),prev_context=encode(previous_chats)):
                 response_buffer.append(token)
                 yield f"data: {json.dumps({'token': token})}\n\n"
             full_response = "".join(response_buffer)
@@ -133,3 +136,17 @@ async def query_reports(query: str,session_id:str,user=Depends(get_current_user)
     except Exception as e:
         print("Stream error:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/{report_id}")
+async def delete_report(report_id:str,user=Depends(get_current_user)):
+    try:
+        with SessionLocal() as db:
+            deleted = Reports.delete(db=db,id=report_id,user_id=user["id"])
+            if deleted:
+                return JSONResponse(status_code=200,content={"message":"Report Deleted Successfully"})
+        return HTTPException(status_code=400, detail="Invalid Report Id")
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print("Error Occured while deleting report", e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")

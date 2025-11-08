@@ -59,11 +59,11 @@ const ReportsPage = () => {
   };
 
   const handleDelete = async (reportId: number) => {
-    if (!confirm("Are you sure you want to delete this report?")) return;
+    // if (!confirm("Are you sure you want to delete this report?")) return;
 
     try {
       setDeleteLoading(reportId);
-      // await apiCall(`/reports/${reportId}`, { method: 'DELETE' });
+      await apiCall(`/report/${reportId}`, "DELETE");
       setReports(reports.filter(r => r.id !== reportId));
       toast.success("Report deleted successfully");
     } catch (error) {

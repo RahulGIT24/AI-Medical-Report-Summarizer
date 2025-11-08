@@ -7,7 +7,7 @@ class TestResults(Base):
     __tablename__ = "test_results"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), nullable=False)
+    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id",ondelete="CASCADE"), nullable=False)
     
     # Test identification
     test_name: Mapped[str] = mapped_column(String(255), nullable=True)

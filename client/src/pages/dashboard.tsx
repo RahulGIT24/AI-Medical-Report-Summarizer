@@ -7,7 +7,7 @@ import { useNavigate } from "react-router"
 interface Stats {
   count: number
   days_ago: number
-  queries: number
+  query_sessions: number
 }
 
 const Dashboard = () => {
@@ -16,7 +16,7 @@ const Dashboard = () => {
   const [userStats, setUserStats] = useState<Stats>({
     count: 0,
     days_ago: 0,
-    queries: 0,
+    query_sessions: 0,
   })
 
   async function fetchStats() {
@@ -72,7 +72,7 @@ const Dashboard = () => {
             : `${userStats.days_ago} day${userStats.days_ago > 1 ? "s" : ""} ago`,
       icon: Clock,
     },
-    { label: "AI Queries", value: userStats.queries.toString(), icon: MessageSquare },
+    { label: "Chat Sessions", value: userStats.query_sessions.toString(), icon: MessageSquare },
   ]
 
   useEffect(() => {

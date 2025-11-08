@@ -7,7 +7,7 @@ class ReportedMedications(Base):
     __tablename__ = "reported_medications"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), nullable=False)
+    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id",ondelete="CASCADE"), nullable=False)
     
     medication_name: Mapped[str] = mapped_column(String(255), nullable=True)
     is_tested: Mapped[bool] = mapped_column(default=True)

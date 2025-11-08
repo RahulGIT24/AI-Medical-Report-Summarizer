@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
 from app.db import get_db
 from fastapi.responses import JSONResponse
-from app.models import Reports
+from app.models import Reports,ChatSession
 from datetime import datetime
 from app.schemas import ReportSchema
 from typing import List
@@ -18,18 +18,21 @@ def get_user_stats(user=Depends(get_current_user),db: Session = Depends(get_db))
         count = db.query(Reports).filter(Reports.owner==user["id"]).count()
         last_report = (
             db.query(Reports)
-            .filter(Reports.owner == user["id"])
+            .filter(Reports.owner == user["id"],Reports.deleted==False)
             .order_by(desc(Reports.created_at))
             .first()
         )
-        if last_report:
-            now = datetime.utcnow()
-            days_ago = (now - last_report.created_at).days
-        return JSONResponse(status_code=200,content={"count":count,"days_ago":days_ago,"queries":0})
+        my_query_session_count = (db.query(ChatSession)
+                                  .filter(ChatSession.user_id == user["id"])
+                                  .count())
+        if not last_report:
+            return JSONResponse(status_code=200,content={"count":0,"days_ago":0,"query_sessions":my_query_session_count})
+        now = datetime.utcnow()
+        days_ago = (now - last_report.created_at).days
+        return JSONResponse(status_code=200,content={"count":count,"days_ago":days_ago,"query_sessions":my_query_session_count})
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(e)
         raise HTTPException(status_code=500, detail="Something went wrong")
 
 @router.get('/reports',response_model=List[ReportSchema])
@@ -37,7 +40,7 @@ def get_user_reports(user=Depends(get_current_user),db: Session = Depends(get_db
     try:
         reports = (
             db.query(Reports)
-            .filter(Reports.owner == user["id"])
+            .filter(Reports.owner == user["id"],Reports.deleted==False)
             .options(joinedload(Reports.reports_media))
             .filter(or_(Reports.data_extracted == True, Reports.error == True))
             .order_by(desc(Reports.created_at))

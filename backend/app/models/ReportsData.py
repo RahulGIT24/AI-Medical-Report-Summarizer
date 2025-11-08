@@ -12,5 +12,5 @@ class ReportsData(Base):
     status:Mapped[bool]
     unit_value:Mapped[str]=mapped_column(String(50), nullable=True)
     
-    report_id:Mapped[int]=mapped_column(ForeignKey("reports.id"))
+    report_id:Mapped[int]=mapped_column(ForeignKey("reports.id",ondelete="CASCADE"))
     report:Mapped["Reports"] = relationship(back_populates="reports_data")

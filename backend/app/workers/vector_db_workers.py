@@ -1,6 +1,5 @@
-from app.lib import embedder,client
+from app.lib import dense_embedder,client,sparse_embedder
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from app.lib import embedder, client
 
 def clean_report(data):
     """Recursively drop None, empty strings, empty lists/dicts."""
@@ -54,9 +53,11 @@ def vectorize_raw_report_data(report_data):
 
         # 3. Embed each chunk and store
         for idx, chunk in enumerate(chunks):
-            embedding = list(embedder.embed(chunk))[0]
+            dense_embeddings = list(dense_embedder.embed(chunk))[0]
+            sparse_embeddings = list(sparse_embedder.embed(chunk))[0]
             client.insert_raw_report_embedding(
-                embeddings=embedding,
+                dense_embeddings=dense_embeddings,
+                sparse_embeddings=sparse_embeddings,
                 chunk_id=idx,
                 report_id=report_id,
                 user_id=user_id,

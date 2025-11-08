@@ -4,9 +4,24 @@ from app.ocr import preprocess_image,text_extraction,llm_class
 from app.models import ReportMetaData, SpecimenValidity, TestResults, ScreeningTests,ReportedMedications, ConfirmationTests
 from app.lib import raw_data_vectorization,get_extraction_prompt
 from app.workers.vector_db_workers import vectorize_raw_report_data
+from datetime import datetime
 from app.models import ReportsMedia
 
 db=SessionLocal()
+
+
+def serialize_model(obj):
+    """Converts SQLAlchemy model instance or dict to JSON-safe dict"""
+    if isinstance(obj, dict):
+        data = obj
+    else:
+        data = obj.__dict__.copy()
+        data.pop("_sa_instance_state", None)  # remove SQLAlchemy internals
+
+    for key, value in data.items():
+        if isinstance(value, datetime):
+            data[key] = value.isoformat()
+    return data
 
 def base_template(collection_name,collection_id,data):
     return {
@@ -70,7 +85,7 @@ def process_reports(report_ids: list[int]):
                 report_id=report.id
             )
 
-            metadata = base_template(collection_id=id,collection_name="report_metadata",data=report_metadata)
+            metadata = base_template(collection_id=id,collection_name="report_metadata",data=serialize_model(report_metadata))
             data_to_vectorize.append(metadata)
 
             specimen_validity_data,id = SpecimenValidity.create(
@@ -88,7 +103,7 @@ def process_reports(report_ids: list[int]):
                 report_id=report.id
             )
 
-            specimen_validity = base_template(collection_id=id,collection_name="specimen_validity",data=specimen_validity_data)
+            specimen_validity = base_template(collection_id=id,collection_name="specimen_validity",data=serialize_model(specimen_validity_data))
 
             data_to_vectorize.append(specimen_validity)
 
@@ -107,7 +122,7 @@ def process_reports(report_ids: list[int]):
                     is_abnormal=test.get('is_abnormal',None),
                     is_critical=test.get('is_critical',None),
                 )
-                test_res = base_template(collection_id=id,collection_name="test_results",data=test_results_data)
+                test_res = base_template(collection_id=id,collection_name="test_results",data=serialize_model(test_results_data))
 
                 data_to_vectorize.append(test_res)
 
@@ -120,7 +135,7 @@ def process_reports(report_ids: list[int]):
                     result_value=test.get("result_value",None),
                     cutoff_value=test.get("cutoff_value",None),
                 )
-                screening_test_res = base_template(collection_id=id,collection_name="screening_tests",data=screening_tests_data)
+                screening_test_res = base_template(collection_id=id,collection_name="screening_tests",data=serialize_model(screening_tests_data))
 
                 data_to_vectorize.append(screening_test_res)
 
@@ -137,7 +152,7 @@ def process_reports(report_ids: list[int]):
                     cutoff_value=test.get("cutoff_value",None),
                     detection_window=test.get("detection_window",None),
                 )
-                confirmation_test_res = base_template(collection_id=id,collection_name="confirmation_tests",data=confirmation_tests)
+                confirmation_test_res = base_template(collection_id=id,collection_name="confirmation_tests",data=serialize_model(confirmation_tests))
 
                 data_to_vectorize.append(confirmation_test_res)
 
@@ -148,7 +163,7 @@ def process_reports(report_ids: list[int]):
                     medication_name=medication.get("medication_name",None),
                     is_tested=medication.get("is_tested",None),
                 )
-                reported_meds = base_template(collection_id=id,collection_name="reported_medications",data=reported_meds_data)
+                reported_meds = base_template(collection_id=id,collection_name="reported_medications",data=serialize_model(reported_meds_data))
 
                 data_to_vectorize.append(reported_meds)
             
@@ -158,6 +173,7 @@ def process_reports(report_ids: list[int]):
                 "user_id":report.owner,
                 "data":data_to_vectorize
             }
+            # print(data_to_vectorize)
 
             Reports.mark_completed(db=db,id=rid)
 

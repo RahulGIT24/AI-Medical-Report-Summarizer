@@ -22,7 +22,7 @@ class ReportMetaData(Base):
     notes: Mapped[str] = mapped_column(Text, nullable=True)
 
     # 1-1 relation with report
-    report_id:Mapped[int]=mapped_column(Integer,ForeignKey("reports.id"))
+    report_id:Mapped[int]=mapped_column(Integer,ForeignKey("reports.id",ondelete="CASCADE"))
     report:Mapped["Reports"] = relationship(back_populates="report_metadata")
 
     @classmethod

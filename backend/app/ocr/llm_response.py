@@ -71,11 +71,11 @@ class llm_class:
           json_text=json.loads(final_text)
           return json_text
     
-    def call_llm_stream(self, user_q, q_context):
+    def call_llm_stream(self, user_q, q_context,prev_context):
         self.chain_prompt()
         response = self.prompt_template | llm  # Groq pipeline
 
         # Directly yield content chunks
-        for chunk in response.stream({"query": user_q, "search_results": q_context}):
+        for chunk in response.stream({"query": user_q, "search_results": q_context,"context":prev_context}):
             if chunk and getattr(chunk, "content", None):
                 yield chunk.content

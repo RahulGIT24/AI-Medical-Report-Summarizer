@@ -7,7 +7,7 @@ class SpecimenValidity(Base):
     __tablename__ = "specimen_validity"
     
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id"), nullable=False)
+    report_id: Mapped[int] = mapped_column(ForeignKey("reports.id",ondelete="CASCADE"), nullable=False)
     
     # Validity parameters
     specific_gravity: Mapped[float] = mapped_column(Float, nullable=True)

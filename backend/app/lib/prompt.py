@@ -30,13 +30,13 @@ def get_extraction_prompt():
       "report_type":"string", # "Lab", "Radiology", "Blood Test", etc.
       "accession_number": "string",
       "collection_date": "YYYY-MM-DD",
-      "received_date": "YYYY-MM-DD HH:MM AM/PM",
+      "received_date": "YYYY-MM-DD",
       "sample_type": "string",  # "Urine", "Blood", etc.
       "lab_name": "string",
       "lab_director": "string",
       "clia_number": "string",
       "cap_number": "string",
-      "report_date": "YYYY-MM-DD HH:MM AM/PM"
+      "report_date": "YYYY-MM-DD"
       "notes":"string" (only if present)
     }},
     "specimen_validity": {{

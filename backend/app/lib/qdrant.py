@@ -4,7 +4,7 @@ from qdrant_client.models import Distance, VectorParams,models
 from fastembed import TextEmbedding
 from fastembed import SparseTextEmbedding
 from qdrant_client import models
-from qdrant_client.models import Query, SparseVector, Fusion
+from qdrant_client.models import PointStruct
 import uuid
 
 from sympy.codegen.cxxnodes import using
@@ -68,7 +68,7 @@ class Qdrant:
         except Exception as e:
             print("Error while storing raw_report embeddings",e)
     
-    def similarity_search_collection1(self,user_id,query_str,top_k=5):
+    def similarity_search_collection1(self,user_id,query_str,top_k=10):
         try:
             search_res = self.client.query_points(
                 collection_name=QDRANT_COLLECTION_1,
@@ -79,7 +79,8 @@ class Qdrant:
                             model="Qdrant/bm42-all-minilm-l6-v2-attentions",
                         ),
                         using="sparse_vector",
-                        limit=7,
+                        
+                        limit=20,
                     ),
                     models.Prefetch(
                         query=models.Document(
@@ -87,12 +88,13 @@ class Qdrant:
                             model="BAAI/bge-small-en-v1.5",
                         ),
                         using="dense_vector",
-                        limit=7,
+                        limit=20,
                     ),
                 ],
                 query=models.FusionQuery(fusion=models.Fusion.RRF),
                 limit=top_k,
                 with_payload=True,
+                score_threshold=0.5,
                 query_filter=models.Filter(
                     must=[
                         models.FieldCondition(

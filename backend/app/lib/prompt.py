@@ -9,12 +9,13 @@ def get_extraction_prompt():
 
   **Instructions:**
   1. Extract ALL test names and their corresponding results, outcomes, cutoffs, and reference ranges
-  2. Extract report metadata (accession number, collection date, lab details, etc.)
+  2. Extract report metadata (accession number, collection date, lab details, patient name (important), patient age (important), patient gender (Only return MALE/FEMALE) etc.)
   3. Do NOT extract patient name or patient identifying information
   4. For test results, create an array of objects with: test_name, result, outcome, cutoff, reference_range, detection_window
   5. Normalize values (remove extra spaces, standardize formats)
   6. If multiple tests have the same name, include all occurrences
-
+  7. If you dont find any value for any parameter return None for that value instead of any string or any other thing
+  
   *** Remember this enum ***
   class TestOutcome(enum.Enum):
       POSITIVE = "positive"
@@ -27,6 +28,8 @@ def get_extraction_prompt():
   {{
     "report_metadata": {{
       "patient_name":"string",
+      "patient_age":"string",
+      "patient_gender":"string",
       "report_type":"string", # "Lab", "Radiology", "Blood Test", etc.
       "accession_number": "string",
       "collection_date": "YYYY-MM-DD",

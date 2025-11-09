@@ -8,6 +8,8 @@ class ReportMetaData(Base):
 
     id:Mapped[int]=mapped_column(Integer, primary_key=True)
     patient_name:Mapped[str]=mapped_column(String,nullable=True)
+    patient_age: Mapped[str] = mapped_column(String, nullable=True)
+    patient_gender: Mapped[str] = mapped_column(String, nullable=True)
     report_type:Mapped[str]=mapped_column(String(100), nullable=True)
     accession_number: Mapped[str] = mapped_column(String(100), nullable=True)
     collection_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)

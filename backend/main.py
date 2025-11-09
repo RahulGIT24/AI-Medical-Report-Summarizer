@@ -39,7 +39,7 @@ app.include_router(router=user_routes)
 app.include_router(router=chat_routes)
 
 if __name__ == "__main__":
-    import os
-    # if os.getenv("ENV") == "DEV": 
-        # seed_in()
+    # import os
+    # if os.getenv("ENV") == "DEV":
+    #     seed_in()
     uvicorn.run("main:app", port=5000, log_level="info",reload=True)

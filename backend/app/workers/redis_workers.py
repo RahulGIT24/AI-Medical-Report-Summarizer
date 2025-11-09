@@ -49,6 +49,7 @@ def process_reports(report_ids: list[int]):
                 report_src=r.url
                 img=preprocess_image(img_src=report_src)
                 raw_text+=text_extraction(img=img)
+                print(raw_text)
 
             llm = llm_class(report_data=raw_text,prompt=get_extraction_prompt())
             llm.set_report_id(rid)
@@ -71,6 +72,8 @@ def process_reports(report_ids: list[int]):
             report_metadata,id = ReportMetaData.create(
                 session=db,
                 patient_name=report_metadata.get('patient_name',None),
+                patient_age=report_metadata.get('patient_age',None),
+                patient_gender=report_metadata.get('patient_gender',None),
                 report_type=report_metadata.get('report_type',None),
                 accession_number=report_metadata.get('accession_number',None),
                 collection_date=report_metadata.get('collection_date',None),

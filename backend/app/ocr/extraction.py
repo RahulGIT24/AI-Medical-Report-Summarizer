@@ -22,5 +22,5 @@ def text_extraction(img: str):
 
 
 if __name__=="__main__":
-    img=preprocess_image(img_src='../../public/processed/790ef119-4762-44b1-bb32-9d2e0828be8d.jpg')
+    img=preprocess_image(img_src='../../public/processed/dbd512ba-0f19-463c-9b7b-0f96ab487efb.jpg')
     print(text_extraction(img=img))

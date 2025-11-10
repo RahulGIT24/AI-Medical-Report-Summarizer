@@ -49,7 +49,6 @@ def process_reports(report_ids: list[int]):
                 report_src=r.url
                 img=preprocess_image(img_src=report_src)
                 raw_text+=text_extraction(img=img)
-                print(raw_text)
 
             llm = llm_class(report_data=raw_text,prompt=get_extraction_prompt())
             llm.set_report_id(rid)
@@ -66,7 +65,7 @@ def process_reports(report_ids: list[int]):
             data_to_vectorize = []
 
 
-            # name id data="" user_id
+            print(raw_text)
 
             # creating metadata     
             report_metadata,id = ReportMetaData.create(
@@ -85,7 +84,8 @@ def process_reports(report_ids: list[int]):
                 report_date=report_metadata.get('report_date',None),
                 cap_number=report_metadata.get('cap_number',None),
                 notes=report_metadata.get('notes',None),
-                report_id=report.id
+                report_id=report.id,
+                raw_ocr_text=raw_text
             )
 
             metadata = base_template(collection_id=id,collection_name="report_metadata",data=serialize_model(report_metadata))
@@ -176,11 +176,10 @@ def process_reports(report_ids: list[int]):
                 "user_id":report.owner,
                 "data":data_to_vectorize
             }
-            # print(data_to_vectorize)
+            db.commit()
 
             Reports.mark_completed(db=db,id=rid)
-
-            raw_data_vectorization.enqueue(vectorize_raw_report_data,raw_report_vectorize)
+            # raw_data_vectorization.enqueue(vectorize_raw_report_data,raw_report_vectorize)
     except Exception as e:
         print(e)
         db.rollback()

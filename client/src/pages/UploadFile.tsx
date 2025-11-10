@@ -452,7 +452,7 @@ const UploadReportsPage = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <div>
-                          <p className="text-white font-medium">Report #{report.id}</p>
+                          <p className="text-white font-medium">Report(s)</p>
                           {report.reports_media.length > 1 && (
                             <p className="text-xs text-gray-500">{report.reports_media.length} files</p>
                           )}

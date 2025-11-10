@@ -273,7 +273,7 @@ const ReportsPage = () => {
                 <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-white font-semibold text-lg">
-                      Report #{report.id}
+                      Report(s)
                     </h3>
                   </div>
 
@@ -330,7 +330,7 @@ const ReportsPage = () => {
           >
             <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between z-10">
               <div>
-                <h3 className="text-xl font-bold text-white">Report #{selectedReport.id}</h3>
+                <h3 className="text-xl font-bold text-white">Report</h3>
                 <p className="text-sm text-gray-400">
                   Viewing {selectedMediaIndex + 1} of {selectedReport.reports_media.length}
                 </p>

@@ -9,7 +9,9 @@ from app.db import SessionLocal
 from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,ScreeningTests,ConfirmationTests,ReportedMedications,ReportsMedia, Chat
 from app.lib import client,get_query_prompt
 from app.ocr import llm_class
+from app.schemas import ReportResponse
 import json
+from sqlalchemy.orm import joinedload
 from toon_python import encode
 
 MAPPINGS = {
@@ -145,6 +147,39 @@ async def delete_report(report_id:str,user=Depends(get_current_user)):
             if deleted:
                 return JSONResponse(status_code=200,content={"message":"Report Deleted Successfully"})
         return HTTPException(status_code=400, detail="Invalid Report Id")
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print("Error Occured while deleting report", e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@router.get("/{report_id}", response_model=ReportResponse,response_model_exclude_none=True)
+async def get_report(report_id: int, user=Depends(get_current_user)):
+    try:
+        with SessionLocal() as db:
+            report = (
+                db.query(Reports)
+                .options(
+                    joinedload(Reports.report_metadata),
+                    joinedload(Reports.test_results),
+                    joinedload(Reports.specimen_validity),
+                    joinedload(Reports.reports_media),
+                    joinedload(Reports.screening_tests),
+                    joinedload(Reports.confirmation_tests),
+                    joinedload(Reports.medications),
+                )
+                .filter(
+                    Reports.id == report_id,
+                    Reports.deleted == False,
+                    Reports.owner == user["id"]
+                )
+                .first()
+            )
+
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found")
+
+        return report
     except HTTPException as e:
         raise e
     except Exception as e:

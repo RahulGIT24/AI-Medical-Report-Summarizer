@@ -33,6 +33,7 @@ class Reports(Base):
     screening_tests: Mapped[list["ScreeningTests"]] = relationship(back_populates="report", cascade="all, delete-orphan")
     confirmation_tests: Mapped[list["ConfirmationTests"]] = relationship(back_populates="report", cascade="all, delete-orphan")
     medications: Mapped[list["ReportedMedications"]] = relationship(back_populates="report", cascade="all, delete-orphan")
+    aisummary:Mapped["AISummary"] = relationship(back_populates="report",cascade="all, delete-orphan")
 
     @classmethod
     def bulk_create(

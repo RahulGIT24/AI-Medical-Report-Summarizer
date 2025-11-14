@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react"
 import {
   FileText,
-  Download,
   Eye,
   Trash2,
   ArrowLeft,
@@ -74,17 +73,7 @@ const ReportsPage = () => {
   };
 
   const handleView = (report: Report) => {
-    setSelectedReport(report);
-    setSelectedMediaIndex(0);
-  };
-
-  const handleDownloadAll = (report: Report) => {
-    report.reports_media.forEach((media, index) => {
-      setTimeout(() => {
-        window.open(media.url, '_blank');
-      }, index * 100);
-    });
-    toast.success("Downloading all files");
+    navigate("/report/"+report.id)
   };
 
   const getStatusBadge = (report: Report) => {
@@ -248,13 +237,6 @@ const ReportsPage = () => {
                       <Eye size={20} />
                     </button>
                     <button
-                      onClick={() => handleDownloadAll(report)}
-                      className="bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg transition-colors"
-                      title="Download All"
-                    >
-                      <Download size={20} />
-                    </button>
-                    <button
                       onClick={() => handleDelete(report.id)}
                       disabled={deleteLoading === report.id}
                       className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg transition-colors disabled:opacity-50"
@@ -273,7 +255,7 @@ const ReportsPage = () => {
                 <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-white font-semibold text-lg">
-                      Report(s)
+                      Report #{report.id}
                     </h3>
                   </div>
 

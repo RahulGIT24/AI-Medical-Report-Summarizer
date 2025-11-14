@@ -1,16 +1,17 @@
-from exceptiongroup import catch
 from fastapi import APIRouter, File, UploadFile, HTTPException,Depends
-from fastapi.responses import JSONResponse,StreamingResponse
+from fastapi.responses import JSONResponse,StreamingResponse,HTMLResponse
 import shutil
 from app.lib import BASE_URL
 import uuid
 from app.middleware import get_current_user
+from pydantic import BaseModel
 from app.db import SessionLocal
-from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,ScreeningTests,ConfirmationTests,ReportedMedications,ReportsMedia, Chat
-from app.lib import client,get_query_prompt
+from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,ScreeningTests,ConfirmationTests,ReportedMedications,ReportsMedia, Chat,AISummary
+from app.lib import client,get_query_prompt,summarization_prompt
 from app.ocr import llm_class
 from app.schemas import ReportResponse
 import json
+import markdown
 from sqlalchemy.orm import joinedload
 from toon_python import encode
 
@@ -184,4 +185,60 @@ async def get_report(report_id: int, user=Depends(get_current_user)):
         raise e
     except Exception as e:
         print("Error Occured while deleting report", e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@router.get("/summarise/{report_id}")
+async def summarise_report(report_id:int, user=Depends(get_current_user)):
+    try:
+        report = None
+        with SessionLocal() as db:
+            report = (db.query(Reports).filter(Reports.id == report_id, Reports.owner == user["id"]).first())
+        
+        if not report:
+            raise HTTPException(status_code=404,detail="Report not found")
+        if report:
+            report_metadata = (db.query(ReportMetaData).filter(ReportMetaData.report_id == report_id).first())
+        if not report_metadata or not report_metadata.raw_ocr_text:
+            raise HTTPException(status_code=404,detail="Nothing to summarize")
+
+        with SessionLocal() as db:
+            result_set = (db.query(AISummary).filter(AISummary.report_id == report.id).first())
+        if result_set and result_set.summary:
+            raise HTTPException(status_code=400,detail="Already Summarised")
+
+        llm_instance = llm_class(prompt=summarization_prompt(), raw_ocr_text=report_metadata.raw_ocr_text)
+        response=llm_instance.call_llm()
+        with SessionLocal() as db:
+            summarised = AISummary(summary=response,report_id=report.id)
+            db.add(summarised)
+            db.commit()
+            db.flush()
+        return JSONResponse(content={'summary':response})
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print("Error Occured while fetching report", e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@router.get("/aisummary/{report_id}")
+async def summarise_report(report_id:int, user=Depends(get_current_user)):
+    try:
+        report = None
+        with SessionLocal() as db:
+            report = (db.query(Reports).filter(Reports.id == report_id, Reports.owner == user["id"]).first())
+        
+        if not report:
+            raise HTTPException(status_code=404,detail="Report not found")
+        with SessionLocal() as db:
+            result_set = (db.query(AISummary).filter(AISummary.report_id == report_id).first())
+        
+        if not result_set:
+            raise HTTPException(status_code=404,detail="Summary Not Found")
+        
+        return JSONResponse(content={'aisummary':result_set.summary})
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print("Error Occured while fetching report", e)
         raise HTTPException(status_code=500, detail="Internal Server Error")

@@ -8,6 +8,7 @@ import ProtectedRoute from './pages/auth/Protected'
 import AIChatInterface from './pages/Chat'
 import ReportsPage from './pages/MyReports'
 import UploadReportsPage from './pages/UploadFile'
+import Report from './pages/Report'
 
 const App = () => {
   return (
@@ -24,6 +25,7 @@ const App = () => {
           <Route path='/reports' element={<ReportsPage />} />
           <Route path='/upload' element={<UploadReportsPage />} />
           <Route path='/chat' element={<AIChatInterface />} />
+          <Route path='/report/:id' element={<Report />} />
         </Route>
       </Routes>
     </Router>

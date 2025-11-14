@@ -10,13 +10,16 @@ class llm_class:
     prompt = ""
     prompt_template = None
     report_data = None
+    raw_ocr_text=None
     report_id = None
 
-    def __init__(self,prompt:str,report_data=None):
+    def __init__(self,prompt:str,report_data=None,raw_ocr_text=None):
       self.prompt = prompt
 
       if report_data:
         self.report_data=report_data
+      if raw_ocr_text:
+        self.raw_ocr_text=raw_ocr_text
 
     def chain_prompt(self):
       self.prompt_template = PromptTemplate.from_template(self.prompt)
@@ -70,6 +73,9 @@ class llm_class:
           final_text=removedPrefix.removesuffix("```")
           json_text=json.loads(final_text)
           return json_text
+        if self.raw_ocr_text:
+           result = response.invoke({"raw_ocr_text": self.raw_ocr_text})
+           return result.content
     
     def call_llm_stream(self, user_q, q_context,prev_context):
         self.chain_prompt()

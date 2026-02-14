@@ -9,7 +9,7 @@ class Reports(Base):
     __tablename__="reports"
 
     id:Mapped[int]=mapped_column(Integer, primary_key=True)
-    owner:Mapped[int]=mapped_column(ForeignKey("users.id"))
+    patient_id:Mapped[int]=mapped_column(ForeignKey("patients.id"))
 
     # checks/status
     data_extracted:Mapped[bool]=mapped_column(Boolean, default=0)
@@ -24,7 +24,8 @@ class Reports(Base):
     updated_at: Mapped[datetime] = mapped_column(
     DateTime, default=datetime.utcnow, server_default=func.now()
 )
-    user:Mapped["User"] = relationship(back_populates="reports")
+    patient:Mapped["Patient"] = relationship(back_populates="reports")
+
     reports_data: Mapped[List["ReportsData"]] = relationship(back_populates="report",cascade="all, delete-orphan")
     report_metadata:Mapped["ReportMetaData"] = relationship(back_populates="report",cascade="all, delete-orphan")
     test_results: Mapped[list["TestResults"]] = relationship(back_populates="report", cascade="all, delete-orphan")
@@ -41,7 +42,7 @@ class Reports(Base):
     ) -> List["Reports"]:
         """Insert multiple reports in one go"""
         report_objects = [
-            cls(url=url, owner=owner_id)
+            cls(url=url, patient=owner_id)
             for url in urls
         ]
         db.bulk_save_objects(report_objects)

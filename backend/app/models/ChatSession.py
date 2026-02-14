@@ -8,20 +8,20 @@ class ChatSession(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     title:Mapped[str] = mapped_column(String,nullable=False)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id", ondelete="CASCADE"))
     timestamp:Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     chats = relationship("Chat", back_populates="chat_session", cascade="all, delete-orphan")
-    user: Mapped["User"] = relationship(back_populates="chat_session")
+    patient: Mapped["Patient"] = relationship(back_populates="chat_session")
 
     @classmethod
-    def get_by_user_id(cls, db: Session, user_id: int, page: int):
+    def get_by_user_id(cls, db: Session, patient_id: int, page: int):
         limit = 10
         offset = (page - 1) * limit
 
         sessions = (
             db.query(cls)
-            .filter(cls.user_id == user_id)
+            .filter(cls.patient_id == patient_id)
             .order_by(cls.timestamp.desc())
             .limit(limit)
             .offset(offset)
@@ -39,8 +39,8 @@ class ChatSession(Base):
         return readable_list
 
     @classmethod
-    def delete(cls,db: Session, id: int, user_id:int):
-        res = (db.query(cls).filter(cls.id == id,cls.user_id==user_id).first())
+    def delete(cls,db: Session, id: int, patient_id:int):
+        res = (db.query(cls).filter(cls.id == id,cls.patient_id==patient_id).first())
         if not res:
             return None
         db.delete(res)

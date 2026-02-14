@@ -11,3 +11,4 @@ from .ReportsMedia import ReportsMedia
 from .ChatSession import ChatSession
 from .Chat import Chat
 from .AISummary import AISummary
+from .Patient import Patient

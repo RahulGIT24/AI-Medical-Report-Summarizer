@@ -10,7 +10,7 @@ def send_email(email=None,name=None, type=None, token=None):
     body=""
     if type=="VERIFICATION":
         msg['Subject'] = "Account Verification Required"
-        body = account_verification_email(name=name, link=f"{CLIENT_URL}verfiy-account?token={token}")
+        body = account_verification_email(name=name, link=f"{CLIENT_URL}verify-account?token={token}")
     if type=="RECOVER_PASSWORD":
         msg['Subject'] = "Password Recovery"
         body = forgot_password_email(name=name, link=f"{CLIENT_URL}recover-password?token={token}")

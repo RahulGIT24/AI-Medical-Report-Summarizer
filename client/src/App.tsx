@@ -9,6 +9,8 @@ import AIChatInterface from './pages/Chat'
 import ReportsPage from './pages/MyReports'
 import UploadReportsPage from './pages/UploadFile'
 import Report from './pages/Report'
+import VerifyAccount from './pages/auth/VerifyAccount'
+import MembersDashboard from './pages/MyMembers'
 
 const App = () => {
   return (
@@ -19,6 +21,7 @@ const App = () => {
           <Route path='/' element={<HealthScanLanding />} />
           <Route path='/signin' element={<Signin />} />
           <Route path='/signup' element={<Signup />} />
+          <Route path='/verify-account' element={<VerifyAccount />} />
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route path='/dashboard' element={<Dashboard />} />
@@ -26,6 +29,7 @@ const App = () => {
           <Route path='/upload' element={<UploadReportsPage />} />
           <Route path='/chat' element={<AIChatInterface />} />
           <Route path='/report/:id' element={<Report />} />
+          <Route path='/members' element={<MembersDashboard />} />
         </Route>
       </Routes>
     </Router>

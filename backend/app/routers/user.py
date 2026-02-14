@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
 from app.db import get_db
 from fastapi.responses import JSONResponse
-from app.models import Reports,ChatSession
+from app.models import Reports,ChatSession,Patient
 from datetime import datetime
 from app.schemas import ReportSchema
 from typing import List
@@ -13,27 +13,20 @@ from sqlalchemy.orm import joinedload
 router=APIRouter(prefix="/user")
 
 @router.get("/stats")
-def get_user_stats(user=Depends(get_current_user),db: Session = Depends(get_db)):
+def get_user_stats(user=Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        count = db.query(Reports).filter(Reports.owner==user["id"]).count()
-        last_report = (
-            db.query(Reports)
-            .filter(Reports.owner == user["id"],Reports.deleted==False)
-            .order_by(desc(Reports.created_at))
-            .first()
-        )
-        my_query_session_count = (db.query(ChatSession)
-                                  .filter(ChatSession.user_id == user["id"])
-                                  .count())
-        if not last_report:
-            return JSONResponse(status_code=200,content={"count":0,"days_ago":0,"query_sessions":my_query_session_count})
-        now = datetime.utcnow()
-        days_ago = (now - last_report.created_at).days
-        return JSONResponse(status_code=200,content={"count":count,"days_ago":days_ago,"query_sessions":my_query_session_count})
-    except HTTPException as e:
-        raise e
+        user_id = user["id"]
+
+        # 1. Count patients created by this user
+        patient_count = db.query(Patient).filter(Patient.creator_id == user_id).count()
+        return {
+            "members": patient_count,
+        }
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Something went wrong")
+        # It's helpful to log the error for debugging
+        print(f"Stats Error: {e}")
+        raise HTTPException(status_code=500, detail="Something went wrong while fetching stats")
 
 @router.get('/reports',response_model=List[ReportSchema])
 def get_user_reports(user=Depends(get_current_user),db: Session = Depends(get_db)):

@@ -1,6 +1,8 @@
 .env
+.idea
 prompt.txt
 .venv
+public
 node-modules
 __pycache__
 /backend/public/uploads/*pdf

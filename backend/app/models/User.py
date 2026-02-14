@@ -22,9 +22,11 @@ class User(Base):
     verification_token:Mapped[str] = mapped_column(String(255), default=None, nullable=True)
     refresh_token:Mapped[str] = mapped_column(String(255), default=None, nullable=True)
     gender:Mapped[str] = mapped_column(Enum(GenderEnum), nullable=False)
-
-    # reports: Mapped[List["Reports"]] = relationship(back_populates="user",cascade="all, delete-orphan")
-    # chat_session: Mapped[List["ChatSession"]] = relationship(back_populates="user",cascade="all, delete-orphan")
+    created_patients: Mapped[List["Patient"]] = relationship(
+        "Patient", 
+        back_populates="creator", 
+        cascade="all, delete-orphan"
+    )
 
     created_at: Mapped[datetime] = mapped_column(
     DateTime, default=datetime.utcnow, server_default=func.now()

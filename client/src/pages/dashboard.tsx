@@ -1,86 +1,87 @@
-import { Loader2, LogOut, Upload, FileText, MessageSquare, Clock, Shield } from "lucide-react"
-import { useEffect, useState } from "react"
-import { apiCall } from "../lib/apiCall"
-import { toast } from "react-toastify"
-import { useNavigate } from "react-router"
+import {
+  Loader2,
+  LogOut,
+  FileText,
+  Shield,
+  User,
+  Users2,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { apiCall } from "../lib/apiCall";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router";
+import CreatePatientModal from "../components/CreatePatientModal";
 
 interface Stats {
-  count: number
-  days_ago: number
-  query_sessions: number
+  members: number;
 }
 
 const Dashboard = () => {
-  const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
+
   const [userStats, setUserStats] = useState<Stats>({
-    count: 0,
-    days_ago: 0,
-    query_sessions: 0,
-  })
+    members: 0,
+  });
+
+  // State for the new member form
 
   async function fetchStats() {
     try {
-      const res = await apiCall("/user/stats")
-      setUserStats(res)
+      const res = await apiCall("/user/stats"); // Adjusted to match your stats endpoint
+      setUserStats({ members: res.members ?? 0 });
     } catch (e) {
-      toast.error("Something went wrong!!")
+      toast.error("Failed to load stats.");
     }
   }
 
   async function logout() {
-    setLoading(true)
-    await apiCall("/auth/signout")
-    toast.success("Signed Out")
-    navigate("/")
-    setLoading(false)
+    setLoading(true);
+    try {
+      await apiCall("/auth/signout");
+      toast.success("Signed Out");
+      navigate("/");
+    } catch (error) {
+      toast.error("Error signing out");
+    } finally {
+      setLoading(false);
+    }
   }
+
+  // Handler for form submission
 
   const dashboardOptions = [
     {
-      icon: Upload,
-      title: "Upload Health Report",
-      description: "Upload your medical reports, lab results, or health documents",
+      icon: User,
+      title: "Add New Member",
+      description: "Create Your Member here",
       gradient: "from-blue-500 to-cyan-500",
-      route: "/upload",
+      action: () => setIsModalOpen(true),
     },
     {
-      icon: FileText,
-      title: "View Processed Reports",
-      description: "Access and review all your previously uploaded health reports",
+      icon: Users2,
+      title: "View Created Members",
+      description: "Access and review all your previously created members",
       gradient: "from-purple-500 to-pink-500",
-      route: "/reports",
+      action: () => navigate("/reports"), // Navigates
     },
-    {
-      icon: MessageSquare,
-      title: "Ask Personal AI",
-      description: "Query your health data and get intelligent insights instantly",
-      gradient: "from-green-500 to-teal-500",
-      route: "/chat",
-    },
-  ]
+  ];
 
   const stats = [
-    { label: "Total Reports", value: userStats.count.toString(), icon: FileText },
     {
-      label: "Last Upload",
-      value:
-        userStats.count === 0
-          ? "No uploads yet"
-          : userStats.days_ago === 0
-            ? "Today"
-            : `${userStats.days_ago} day${userStats.days_ago > 1 ? "s" : ""} ago`,
-      icon: Clock,
+      label: "Total Members",
+      value: userStats.members.toString(),
+      icon: FileText,
     },
-    { label: "Chat Sessions", value: userStats.query_sessions.toString(), icon: MessageSquare },
-  ]
+  ];
 
   useEffect(() => {
-    fetchStats()
-  }, [])
+    fetchStats();
+  }, []);
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-gray-900 via-slate-900 to-gray-900">
+    <main className="min-h-screen relative bg-linear-to-br from-gray-900 via-slate-900 to-gray-900">
       {/* Navigation */}
       <nav className="flex justify-between items-center px-6 lg:px-9 pt-6 lg:pt-10">
         <div className="flex items-center space-x-3">
@@ -98,7 +99,11 @@ const Dashboard = () => {
           title="Sign Out"
           disabled={loading}
         >
-          {loading ? <Loader2 className="animate-spin" size={25} /> : <LogOut size={25} />}
+          {loading ? (
+            <Loader2 className="animate-spin" size={25} />
+          ) : (
+            <LogOut size={25} />
+          )}
         </button>
       </nav>
 
@@ -106,8 +111,12 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Welcome Section */}
         <div className="mb-12">
-          <h1 className="text-4xl lg:text-5xl font-bold text-white mb-3">Welcome Back! 👋</h1>
-          <p className="text-xl text-gray-400">Manage your health reports and get AI-powered insights</p>
+          <h1 className="text-4xl lg:text-5xl font-bold text-white mb-3">
+            Welcome Back! 👋
+          </h1>
+          <p className="text-xl text-gray-400">
+            Manage your health reports and get AI-powered insights
+          </p>
         </div>
 
         {/* Stats Cards */}
@@ -133,11 +142,11 @@ const Dashboard = () => {
         {/* Main Action Cards */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-white mb-6">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
             {dashboardOptions.map((option, index) => (
               <button
                 key={index}
-                onClick={() => navigate(option.route)}
+                onClick={option.action}
                 className="group relative bg-gray-800/60 backdrop-blur-xl rounded-2xl p-8 border border-gray-700 hover:border-gray-600 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20 text-left"
               >
                 <div
@@ -152,18 +161,9 @@ const Dashboard = () => {
                   <h3 className="text-xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-linear-to-r group-hover:bg-clip-text group-hover:from-blue-400 group-hover:to-green-400 transition-all">
                     {option.title}
                   </h3>
-                  <p className="text-gray-400 leading-relaxed">{option.description}</p>
-                </div>
-                <div className="relative mt-4 flex items-center text-gray-500 group-hover:text-blue-400 transition-colors">
-                  <span className="text-sm font-medium mr-2">Get Started</span>
-                  <svg
-                    className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <p className="text-gray-400 leading-relaxed">
+                    {option.description}
+                  </p>
                 </div>
               </button>
             ))}
@@ -177,17 +177,28 @@ const Dashboard = () => {
               <Shield className="text-white" size={24} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-white mb-2">Your Data is Secure</h3>
+              <h3 className="text-xl font-bold text-white mb-2">
+                Your Data is Secure
+              </h3>
               <p className="text-gray-400 leading-relaxed">
-                All your health reports are encrypted and stored securely. We use enterprise-grade security to ensure
-                your medical information remains private and protected.
+                All your health reports are encrypted and stored securely. We
+                use enterprise-grade security to ensure your medical information
+                remains private and protected.
               </p>
             </div>
           </div>
         </div>
       </div>
-    </main>
-  )
-}
 
-export default Dashboard
+      {/* Add New Member Modal */}
+      {isModalOpen && (
+        <CreatePatientModal
+          setIsModalOpen={setIsModalOpen}
+          fetchStats={fetchStats}
+        />
+      )}
+    </main>
+  );
+};
+
+export default Dashboard;

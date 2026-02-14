@@ -1,10 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from app.schemas import PatientSchema
+from app.schemas import PatientSchema,PatientResponse
 from app.db import get_db
 from app.models import Patient
 from app.middleware import get_current_user
+from typing import List
 
 router = APIRouter(prefix="/patients")
 
@@ -49,3 +50,19 @@ def create_patient(
         print(f"Error creating patient: {e}") # Helpful for terminal debugging
         db.rollback() # Important: discard failed transactions
         raise HTTPException(status_code=500, detail="Something went wrong while creating the member")
+
+@router.get("/")
+def get_my_patients(
+    user: dict = Depends(get_current_user), 
+    db: Session = Depends(get_db),
+    response_model=List[PatientResponse]
+):
+    try:
+        user_id = user["id"]
+        members = db.query(Patient).filter(Patient.creator_id == user_id).all()
+        return members
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Error fetching patients: {e}") 
+        raise HTTPException(status_code=500, detail="Something went wrong while fetching members")

@@ -64,7 +64,7 @@ const Dashboard = () => {
       title: "View Created Members",
       description: "Access and review all your previously created members",
       gradient: "from-purple-500 to-pink-500",
-      action: () => navigate("/reports"), // Navigates
+      action: () => navigate("/members"), // Navigates
     },
   ];
 

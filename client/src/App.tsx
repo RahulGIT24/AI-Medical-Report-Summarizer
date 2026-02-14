@@ -10,6 +10,7 @@ import ReportsPage from './pages/MyReports'
 import UploadReportsPage from './pages/UploadFile'
 import Report from './pages/Report'
 import VerifyAccount from './pages/auth/VerifyAccount'
+import MembersDashboard from './pages/MyMembers'
 
 const App = () => {
   return (
@@ -28,6 +29,7 @@ const App = () => {
           <Route path='/upload' element={<UploadReportsPage />} />
           <Route path='/chat' element={<AIChatInterface />} />
           <Route path='/report/:id' element={<Report />} />
+          <Route path='/members' element={<MembersDashboard />} />
         </Route>
       </Routes>
     </Router>

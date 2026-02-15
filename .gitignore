@@ -18,3 +18,4 @@ __pycache__
 /backend/public/sample_data
 /backend/output
 /backend/logs
+/.idea

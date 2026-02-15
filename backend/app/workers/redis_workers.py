@@ -173,7 +173,7 @@ def process_reports(report_ids: list[int]):
             # # for collection1
             raw_report_vectorize = {
                 "report_id":rid,
-                "user_id":report.owner,
+                "patient_id":report.patient_id,
                 "data":data_to_vectorize
             }
             db.commit()
@@ -182,6 +182,14 @@ def process_reports(report_ids: list[int]):
             logger.info(f"Report id -> {rid}. Processed Successfully")
             # raw_data_vectorization.enqueue(vectorize_raw_report_data,raw_report_vectorize)
     except Exception as e:
-        logger.error(f"Unable to store data in report due to error. Error {e}")
-        db.rollback()
-        Reports.mark_error(db=db,errormsg="Unable to Store data",id=rid)
+            # 2. ROLLBACK IMMEDIATELY
+            db.rollback()
+            
+            # 3. USE LOGGER.EXCEPTION TO PRINT FULL STACK TRACE
+            logger.exception(f"Failed to process report ID: {rid}. Error: {str(e)}")
+            
+            # 4. WRAP ERROR MARKING IN ITS OWN TRY-CATCH
+            try:
+                Reports.mark_error(db=db, errormsg=str(e), id=rid)
+            except Exception as inner_e:
+                logger.error(f"FATAL: Could not mark report {rid} as error. Database issue: {inner_e}")

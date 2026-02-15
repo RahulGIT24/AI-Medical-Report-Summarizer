@@ -31,7 +31,7 @@ def enqueue_pending_reports():
         db.commit()
 
         r_queue.enqueue(process_reports, report_ids)
-        logger.info(", ".join(report_ids) + " Submitted for processing")
+        logger.info(", ".join(str(report_ids)) + " Submitted for processing")
     except Exception as e:
       logger.error(f'An exception occurred while enqueing {e}')
 

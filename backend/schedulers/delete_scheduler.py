@@ -23,7 +23,7 @@ def delete_reports():
             db.query(Reports).filter(Reports.id.in_(report_ids)).delete(synchronize_session=False)
             client.delete_embeddings(report_ids=report_ids)
             db.commit()
-        logger.info(", ".join(report_ids) + " Submitted for deleted successfully")
+        logger.info(", ".join(str(report_ids)) + " Submitted for deleted successfully")
     except Exception as e:
         logger.error(f"Error while deleting report {e}")
 

@@ -6,7 +6,7 @@ def text_extraction(img: str):
         lang='en',
         use_angle_cls=False,
         ocr_version='PP-OCRv3',
-        enable_mkldnn=True,
+        enable_mkldnn=False,
     )
 
     result = ocr.predict(input=img)

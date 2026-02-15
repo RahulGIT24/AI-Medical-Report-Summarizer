@@ -17,3 +17,4 @@ __pycache__
 /backend/public/uploads/*docx
 /backend/public/sample_data
 /backend/output
+/backend/logs

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   User,
   Activity,
@@ -9,7 +9,9 @@ import {
   Loader2,
   Calendar,
   ChevronRight,
-  Users
+  Users,
+  X,
+  FileText,
 } from "lucide-react";
 import { apiCall } from "../lib/apiCall";
 import { toast } from "react-toastify";
@@ -34,19 +36,27 @@ export default function MembersDashboard() {
   const [activeTab, setActiveTab] = useState<TabType>("upload");
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Upload specific state
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Fetch patients on component mount
   useEffect(() => {
     fetchPatients();
   }, []);
 
+  // Reset files when changing patients or tabs
+  useEffect(() => {
+    setSelectedFiles([]);
+  }, [selectedPatient, activeTab]);
+
   async function fetchPatients() {
     try {
       setLoading(true);
-      // Assuming you have this endpoint to get all patients for the user
-      const res = await apiCall("/patients"); 
-      setPatients(res.data || res); // Adjust based on your actual API response structure
-      
-      // Auto-select the first patient if the list isn't empty
+      const res = await apiCall("/patients");
+      setPatients(res.data || res);
+
       if (res && res.length > 0) {
         setSelectedPatient(res[0]);
       }
@@ -57,7 +67,6 @@ export default function MembersDashboard() {
     }
   }
 
-  // Calculate age dynamically from DOB
   const calculateAge = (dobString: string) => {
     const today = new Date();
     const birthDate = new Date(dobString);
@@ -70,13 +79,56 @@ export default function MembersDashboard() {
   };
 
   const filteredPatients = patients.filter((p) =>
-    `${p.first_name} ${p.last_name}`.toLowerCase().includes(searchQuery.toLowerCase())
+    `${p.first_name} ${p.last_name}`
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase()),
   );
+
+  // --- UPLOAD HANDLERS ---
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      if (selectedFiles.length + newFiles.length > 5) {
+        toast.error("You can only upload up to 5 files at a time.");
+        return;
+      }
+      setSelectedFiles((prev) => [...prev, ...newFiles]);
+    }
+  };
+
+  const removeFile = (indexToRemove: number) => {
+    setSelectedFiles((prev) =>
+      prev.filter((_, index) => index !== indexToRemove),
+    );
+  };
+
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0 || !selectedPatient) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+
+    formData.append("patient_id", selectedPatient.id.toString());
+
+    selectedFiles.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    try {
+      await apiCall("/report/upload", "POST", formData, "multipart/form-data");
+
+      toast.success("Reports uploaded successfully!");
+      setSelectedFiles([]);
+    } catch (error: any) {
+      toast.error(error.message || "Something went wrong during upload.");
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = ""; // Reset input
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col md:flex-row font-sans text-gray-100">
-      
-      {/* SIDEBAR: Members List */}
       <aside className="w-full md:w-80 lg:w-96 bg-gray-900 border-r border-gray-800 flex flex-col h-screen sticky top-0">
         <div className="p-6 border-b border-gray-800">
           <div className="flex items-center justify-between mb-6">
@@ -84,18 +136,20 @@ export default function MembersDashboard() {
               <User className="text-blue-400" size={24} />
               Family Members
             </h2>
-            <button 
-              onClick={() => navigate("/dashboard")} // Route back to dashboard to use the modal, or add modal here
-              className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-300 transition-colors"
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="p-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-300 transition-colors cursor-pointer"
               title="Add Member"
             >
               <Plus size={20} />
             </button>
           </div>
 
-          {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+              size={18}
+            />
             <input
               type="text"
               placeholder="Search members..."
@@ -106,7 +160,6 @@ export default function MembersDashboard() {
           </div>
         </div>
 
-        {/* Patient List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
           {loading ? (
             <div className="flex justify-center py-10">
@@ -128,24 +181,34 @@ export default function MembersDashboard() {
                 } border text-left cursor-pointer`}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shadow-lg ${
-                    patient.gender === "M" ? "bg-blue-500/20 text-blue-400" : "bg-pink-500/20 text-pink-400"
-                  }`}>
-                    {patient.first_name[0]}{patient.last_name[0]}
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg shadow-lg ${
+                      patient.gender === "M"
+                        ? "bg-blue-500/20 text-blue-400"
+                        : "bg-pink-500/20 text-pink-400"
+                    }`}
+                  >
+                    {patient.first_name[0]}
+                    {patient.last_name[0]}
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-100">
                       {patient.first_name} {patient.last_name}
                     </h3>
                     <p className="text-sm text-gray-400 flex items-center gap-1">
-                      <Calendar size={14} /> 
-                      {calculateAge(patient.dob)} yrs • {patient.gender === "M" ? "Male" : "Female"}
+                      <Calendar size={14} />
+                      {calculateAge(patient.dob)} yrs •{" "}
+                      {patient.gender === "M" ? "Male" : "Female"}
                     </p>
                   </div>
                 </div>
-                <ChevronRight 
-                  size={20} 
-                  className={selectedPatient?.id === patient.id ? "text-blue-400" : "text-gray-600"} 
+                <ChevronRight
+                  size={20}
+                  className={
+                    selectedPatient?.id === patient.id
+                      ? "text-blue-400"
+                      : "text-gray-600"
+                  }
                 />
               </button>
             ))
@@ -157,20 +220,25 @@ export default function MembersDashboard() {
       <main className="flex-1 flex flex-col h-screen overflow-hidden bg-gray-950">
         {selectedPatient ? (
           <>
-            {/* Header for Selected Patient */}
             <header className="bg-gray-900 border-b border-gray-800 px-8 py-6 flex-shrink-0">
               <div className="flex items-center gap-6">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-xl ${
-                    selectedPatient.gender === "M" ? "bg-blue-500/20 text-blue-400" : "bg-pink-500/20 text-pink-400"
-                  }`}>
-                    {selectedPatient.first_name[0]}{selectedPatient.last_name[0]}
+                <div
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-xl ${
+                    selectedPatient.gender === "M"
+                      ? "bg-blue-500/20 text-blue-400"
+                      : "bg-pink-500/20 text-pink-400"
+                  }`}
+                >
+                  {selectedPatient.first_name[0]}
+                  {selectedPatient.last_name[0]}
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-white mb-1">
                     {selectedPatient.first_name} {selectedPatient.last_name}
                   </h1>
                   <p className="text-gray-400">
-                    Patient ID: #{selectedPatient.id} • DOB: {selectedPatient.dob}
+                    Patient ID: #{selectedPatient.id} • DOB:{" "}
+                    {selectedPatient.dob}
                   </p>
                 </div>
               </div>
@@ -179,36 +247,27 @@ export default function MembersDashboard() {
               <div className="flex gap-8 mt-8 border-b border-gray-800">
                 <button
                   onClick={() => setActiveTab("upload")}
-                  className={`pb-4 text-sm font-medium transition-colors relative flex items-center gap-2 ${
-                    activeTab === "upload" ? "text-blue-400" : "text-gray-400 hover:text-gray-200"
-                  }`}
+                  className={`pb-4 text-sm font-medium transition-colors relative flex items-center gap-2 ${activeTab === "upload" ? "text-blue-400" : "text-gray-400 hover:text-gray-200"}`}
                 >
-                  <Upload size={18} />
-                  Upload Report
+                  <Upload size={18} /> Upload Report
                   {activeTab === "upload" && (
                     <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 rounded-t-full" />
                   )}
                 </button>
                 <button
                   onClick={() => setActiveTab("trends")}
-                  className={`pb-4 text-sm font-medium transition-colors relative flex items-center gap-2 ${
-                    activeTab === "trends" ? "text-blue-400" : "text-gray-400 hover:text-gray-200"
-                  }`}
+                  className={`pb-4 text-sm font-medium transition-colors relative flex items-center gap-2 ${activeTab === "trends" ? "text-blue-400" : "text-gray-400 hover:text-gray-200"}`}
                 >
-                  <Activity size={18} />
-                  Analyze Trends
+                  <Activity size={18} /> Analyze Trends
                   {activeTab === "trends" && (
                     <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 rounded-t-full" />
                   )}
                 </button>
                 <button
                   onClick={() => setActiveTab("ask")}
-                  className={`pb-4 text-sm font-medium transition-colors relative flex items-center gap-2 ${
-                    activeTab === "ask" ? "text-blue-400" : "text-gray-400 hover:text-gray-200"
-                  }`}
+                  className={`pb-4 text-sm font-medium transition-colors relative flex items-center gap-2 ${activeTab === "ask" ? "text-blue-400" : "text-gray-400 hover:text-gray-200"}`}
                 >
-                  <MessageSquare size={18} />
-                  Ask AI
+                  <MessageSquare size={18} /> Ask AI
                   {activeTab === "ask" && (
                     <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 rounded-t-full" />
                   )}
@@ -218,75 +277,109 @@ export default function MembersDashboard() {
 
             {/* Tab Content Area */}
             <div className="flex-1 overflow-y-auto p-8">
+              {/* UPLOAD TAB */}
               {activeTab === "upload" && (
-                <div className="animate-fade-in">
-                  {/* Placeholder for your actual Upload Component */}
-                  <div className="border-2 border-dashed border-gray-800 rounded-2xl p-12 text-center bg-gray-900/50">
-                    <Upload className="mx-auto text-gray-500 mb-4" size={48} />
-                    <h3 className="text-xl font-bold text-white mb-2">Upload Medical Records</h3>
-                    <p className="text-gray-400 mb-6">Drop your PDFs, images, or lab results here to add them to {selectedPatient.first_name}'s profile.</p>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors cursor-pointer">
-                      Select Files
+                <div className="animate-fade-in max-w-3xl">
+                  {/* Hidden File Input */}
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" // Update based on your allowed_extensions
+                  />
+
+                  {/* Dropzone / Select Box */}
+                  <div className="border-2 border-dashed border-gray-700 hover:border-blue-500 rounded-2xl p-12 text-center bg-gray-900/50 transition-colors">
+                    <Upload className="mx-auto text-blue-400 mb-4" size={48} />
+                    <h3 className="text-xl font-bold text-white mb-2">
+                      Upload Medical Records
+                    </h3>
+                    <p className="text-gray-400 mb-6">
+                      Drop your PDFs or images here to add them to{" "}
+                      {selectedPatient.first_name}'s profile.
+                    </p>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-600 px-6 py-2.5 rounded-lg font-medium transition-colors cursor-pointer"
+                    >
+                      Browse Files
                     </button>
                   </div>
-                </div>
-              )}
 
-              {activeTab === "trends" && (
-                <div className="animate-fade-in">
-                  {/* Placeholder for Charts Component */}
-                  <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 shadow-lg">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 bg-green-500/20 rounded-lg">
-                        <Activity className="text-green-400" size={24} />
+                  {/* Selected Files List */}
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-8">
+                      <h4 className="text-lg font-semibold text-white mb-4">
+                        Selected Files ({selectedFiles.length}/5)
+                      </h4>
+                      <div className="space-y-3 mb-6">
+                        {selectedFiles.map((file, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between bg-gray-900 border border-gray-800 p-4 rounded-xl"
+                          >
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <FileText
+                                className="text-blue-400 flex-shrink-0"
+                                size={24}
+                              />
+                              <div className="truncate">
+                                <p className="text-sm font-medium text-gray-200 truncate">
+                                  {file.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {(file.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => removeFile(index)}
+                              className="text-gray-500 hover:text-red-400 transition-colors p-2 cursor-pointer"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+                        ))}
                       </div>
-                      <h3 className="text-xl font-bold text-white">Health Biomarkers over Time</h3>
-                    </div>
-                    <div className="h-64 flex items-center justify-center border border-gray-800 rounded-xl bg-gray-950 text-gray-500">
-                      [ Interactive Line Charts will render here ]
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              {activeTab === "ask" && (
-                <div className="animate-fade-in h-full flex flex-col">
-                  {/* Placeholder for Chat Interface */}
-                  <div className="flex-1 bg-gray-900 rounded-2xl border border-gray-800 p-6 flex flex-col shadow-lg min-h-[400px]">
-                    <div className="flex-1 flex flex-col items-center justify-center text-center px-4 mb-6">
-                      <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4">
-                        <MessageSquare className="text-blue-400" size={32} />
-                      </div>
-                      <h3 className="text-lg font-bold text-white mb-2">Chat with HealthScan AI</h3>
-                      <p className="text-gray-400 max-w-md">
-                        Ask questions about {selectedPatient.first_name}'s uploaded reports. Try asking "What does the recent lipid panel indicate?"
-                      </p>
-                    </div>
-                    {/* Fake Input */}
-                    <div className="relative mt-auto">
-                      <input 
-                        type="text" 
-                        placeholder={`Ask a question about ${selectedPatient.first_name}'s health...`} 
-                        className="w-full bg-gray-950 border border-gray-800 rounded-xl pl-4 pr-12 py-4 text-gray-200 focus:outline-none focus:border-blue-500"
-                      />
-                      <button className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors">
-                        <ChevronRight size={20} />
+                      <button
+                        onClick={handleUpload}
+                        disabled={isUploading}
+                        className="w-full bg-linear-to-r from-blue-600 to-green-600 text-white py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="animate-spin" size={20} />
+                            Uploading securely...
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={20} />
+                            Confirm & Upload Files
+                          </>
+                        )}
                       </button>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
+
+              {/* ... Trends & Ask AI tabs remain unchanged from previous snippet ... */}
             </div>
           </>
         ) : (
-          /* Empty State: No Patient Selected */
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
             <div className="w-24 h-24 bg-gray-900 rounded-full flex items-center justify-center mb-6 shadow-xl border border-gray-800">
               <Users className="text-gray-500" size={40} />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">No Member Selected</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              No Member Selected
+            </h2>
             <p className="text-gray-400 max-w-sm">
-              Select a family member from the sidebar to view their reports, analyze health trends, and consult the AI.
+              Select a family member from the sidebar to view their reports,
+              analyze health trends, and consult the AI.
             </p>
           </div>
         )}

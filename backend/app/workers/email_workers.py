@@ -1,7 +1,9 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from app.lib import account_verification_email,forgot_password_email,EMAIL, PASSWORD,CLIENT_URL
+from app.lib import account_verification_email,forgot_password_email,EMAIL, PASSWORD,CLIENT_URL,get_logger
+
+logger = get_logger("email_worker", "email_worker.log")
 
 def send_email(email=None,name=None, type=None, token=None):
     msg = MIMEMultipart('alternative')
@@ -22,9 +24,9 @@ def send_email(email=None,name=None, type=None, token=None):
         server.starttls()
         server.login(EMAIL, PASSWORD)
         server.send_message(msg)
-        print("Email sent successfully to "+email)
+        logger.info(f"Email sent successfully to {email}")
     except Exception as e:
-        print(e)
+        logger.info(f"Error while sending mail to {email}. Error is {e}")
         raise ValueError("Can't send emails")
     finally:
         server.quit()

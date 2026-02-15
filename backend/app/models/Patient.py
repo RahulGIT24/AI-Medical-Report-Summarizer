@@ -1,6 +1,6 @@
 from app.db import Base
 from sqlalchemy import String, Enum,DateTime, func, Date,ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship,Session
 from datetime import datetime,date
 import enum
 from typing import List
@@ -27,3 +27,14 @@ class Patient(Base):
     updated_at: Mapped[datetime] = mapped_column(
     DateTime, default=datetime.utcnow, server_default=func.now()
 )
+    
+    @classmethod
+    def get_by_id_and_creator(cls, db: Session, patient_id: int, creator_id: int):
+        """
+        Fetches a patient by their ID, ensuring the creator_id matches.
+        Returns the Patient object if found, otherwise returns None.
+        """
+        return db.query(cls).filter(
+            cls.id == patient_id, 
+            cls.creator_id == creator_id
+        ).first()

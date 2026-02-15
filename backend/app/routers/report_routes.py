@@ -1,17 +1,15 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException,Depends
-from fastapi.responses import JSONResponse,StreamingResponse,HTMLResponse
+from fastapi import APIRouter, File, UploadFile, HTTPException,Depends,Form
+from fastapi.responses import JSONResponse,StreamingResponse
 import shutil
 from app.lib import BASE_URL
 import uuid
 from app.middleware import get_current_user
-from pydantic import BaseModel
 from app.db import SessionLocal
-from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,ScreeningTests,ConfirmationTests,ReportedMedications,ReportsMedia, Chat,AISummary
+from app.models import Reports,SpecimenValidity,ReportMetaData,TestResults,ScreeningTests,ConfirmationTests,ReportedMedications,ReportsMedia, Chat,AISummary,Patient
 from app.lib import client,get_query_prompt,summarization_prompt
 from app.ocr import llm_class
 from app.schemas import ReportResponse
 import json
-import markdown
 from sqlalchemy.orm import joinedload
 from toon_python import encode
 
@@ -31,59 +29,65 @@ router=APIRouter(prefix="/report")
 allowed_extensions = ['jpeg','jpg','png']
 
 @router.post("/upload")
-async def upload_files(files:list[UploadFile]=File(...),user=Depends(get_current_user)):
+async def upload_files(
+    patient_id: int = Form(...),
+    files: list[UploadFile] = File(...),
+    user=Depends(get_current_user)
+):
     try:
-        user_id=user["id"]
-        if len(files)==1 and files[0].filename == "":
+        user_id = user["id"]
+
+        if len(files) == 1 and files[0].filename == "":
             raise HTTPException(detail="Please Provide files to upload", status_code=400)
 
-        if len(files)==0:
+        if len(files) == 0:
             raise HTTPException(detail="Please Provide some files to upload", status_code=400)
 
-        if len(files)>10:
+        if len(files) > 10:
             raise HTTPException(detail="Can't upload more than 5 files at a time", status_code=400)
 
         for file in files:
-            splitted_name = file.filename.split(".")
-            ext = splitted_name[-1].lower().strip()
+            ext = file.filename.split(".")[-1].lower().strip()
             if ext not in allowed_extensions:
-                raise HTTPException(detail=f"{file.filename} has an invalid extension. Allowed file types are {', '.join(allowed_extensions)}", status_code=400)   
+                raise HTTPException(
+                    detail=f"{file.filename} has an invalid extension. Allowed file types are {', '.join(allowed_extensions)}",
+                    status_code=400
+                )
 
-        uploaded_file_locations=[]
+        uploaded_file_locations = []
 
-        report=Reports(
-            owner=user_id,
-        )
+        patient = Patient.get_by_id_and_creator(db=db, creator_id=user_id, patient_id=patient_id)
+
+        if patient is None:
+            raise HTTPException(detail="Patient Not found", status_code=404)
+
+        report = Reports(patient_id=patient_id)
         db.add(report)
         db.commit()
         db.flush()
 
         for file in files:
-
-            splitted_name = file.filename.split(".")
-            name=uuid.uuid4()
-            ext="."+splitted_name[-1].lower().strip()
-            final_name=str(name)+ext
+            ext = "." + file.filename.split(".")[-1].lower().strip()
+            final_name = f"{uuid.uuid4()}{ext}"
 
             file_location = f"public/uploads/{final_name}"
-            with open(file_location,"wb") as buffer:
-                shutil.copyfileobj(file.file,buffer)
+            with open(file_location, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
 
-            uploaded_file_locations.append(BASE_URL+"uploads/"+final_name)
-        
-        ReportsMedia.bulk_create(db=db,report_id=report.id,urls=uploaded_file_locations)
+            uploaded_file_locations.append(BASE_URL + "uploads/" + final_name)
+
+        ReportsMedia.bulk_create(db=db, report_id=report.id, urls=uploaded_file_locations)
 
     except HTTPException as e:
         raise e
     except Exception as e:
-        print("Error occured while uploading repuser=Depends(get_current_user)orts ",e)
-        raise HTTPException(status_code=500,detail="Internal Server Error")
+        print("Error occurred while uploading reports", e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
-    
-    data  ={
-        "message":'Report Uploaded Successfully'
-    }
-    return JSONResponse(status_code=200,content=data)
+    return JSONResponse(
+        status_code=200,
+        content={"message": "Report Uploaded Successfully"}
+    )
 
 @router.get("/search")
 async def query_reports(query: str,session_id:str,user=Depends(get_current_user)):

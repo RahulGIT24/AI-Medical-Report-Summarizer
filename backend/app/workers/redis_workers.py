@@ -2,13 +2,13 @@ from app.db import SessionLocal
 from app.models import ConfirmationTests, Reports
 from app.ocr import preprocess_image,text_extraction,llm_class
 from app.models import ReportMetaData, SpecimenValidity, TestResults, ScreeningTests,ReportedMedications, ConfirmationTests
-from app.lib import raw_data_vectorization,get_extraction_prompt
+from app.lib import raw_data_vectorization,get_extraction_prompt,get_logger
 from app.workers.vector_db_workers import vectorize_raw_report_data
 from datetime import datetime
 from app.models import ReportsMedia
 
 db=SessionLocal()
-
+logger = get_logger("redis_worker", "redis_worker.log")
 
 def serialize_model(obj):
     """Converts SQLAlchemy model instance or dict to JSON-safe dict"""
@@ -16,7 +16,7 @@ def serialize_model(obj):
         data = obj
     else:
         data = obj.__dict__.copy()
-        data.pop("_sa_instance_state", None)  # remove SQLAlchemy internals
+        data.pop("_sa_instance_state", None)
 
     for key, value in data.items():
         if isinstance(value, datetime):
@@ -179,8 +179,9 @@ def process_reports(report_ids: list[int]):
             db.commit()
 
             Reports.mark_completed(db=db,id=rid)
+            logger.info(f"Report id -> {rid}. Processed Successfully")
             # raw_data_vectorization.enqueue(vectorize_raw_report_data,raw_report_vectorize)
     except Exception as e:
-        print(e)
+        logger.error(f"Unable to store data in report due to error. Error {e}")
         db.rollback()
         Reports.mark_error(db=db,errormsg="Unable to Store data",id=rid)

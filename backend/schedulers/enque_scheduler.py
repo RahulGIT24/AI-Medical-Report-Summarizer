@@ -7,10 +7,12 @@ import time
 from sqlalchemy.orm import Session
 from app.db import SessionLocal
 from app.models import Reports
-from app.lib import r_queue
+from app.lib import r_queue, get_logger
 from app.workers import process_reports
 
 BATCH_SIZE=10
+
+logger = get_logger("enque_scheduler", "enqueue_scheduler.log")
 
 def enqueue_pending_reports():
     try:
@@ -18,7 +20,7 @@ def enqueue_pending_reports():
         pending = db.query(Reports).filter(Reports.data_extracted==False, Reports.enqueued==False).limit(BATCH_SIZE).all()
 
         if not pending:
-            print("Nothing to enqueue!!")
+            logger.info("Nothing to enqueue!!")
             db.close()
             return
 
@@ -28,11 +30,10 @@ def enqueue_pending_reports():
             r.enqueued = True
         db.commit()
 
-        print(report_ids)
-
         r_queue.enqueue(process_reports, report_ids)
+        logger.info(", ".join(report_ids) + " Submitted for processing")
     except Exception as e:
-      print('An exception occurred while enqueing',e)
+      logger.error(f'An exception occurred while enqueing {e}')
 
 def scheduler_enqueue():
     while True:

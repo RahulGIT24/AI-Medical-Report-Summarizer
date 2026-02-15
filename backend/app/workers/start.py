@@ -5,7 +5,7 @@ def start_worker(name):
     subprocess.run(["rq", "worker", name])
 
 if __name__ == "__main__":
-    worker_names = ["email_worker", "raw_data_vectorization", "email_worker"]
+    worker_names = ["email_worker", "raw_data_vectorization",'report_tasks']
     procs = []
     for name in worker_names:
         p = multiprocessing.Process(target=start_worker, args=(name,))

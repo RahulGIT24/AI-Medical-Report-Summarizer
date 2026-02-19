@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from app.schemas import PatientSchema,PatientResponse
+from app.schemas import PatientSchema,PatientResponse,ReportSchema
 from app.db import get_db
-from app.models import Patient
+from app.models import Patient,Reports,ReportsMedia
 from app.middleware import get_current_user
 from typing import List
+from sqlalchemy.orm import selectinload
 
 router = APIRouter(prefix="/patients")
 
@@ -61,6 +62,34 @@ def get_my_patients(
         user_id = user["id"]
         members = db.query(Patient).filter(Patient.creator_id == user_id).all()
         return members
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Error fetching patients: {e}") 
+        raise HTTPException(status_code=500, detail="Something went wrong while fetching members")
+
+@router.get("/reports")
+def get_patient_reports(
+    user: dict = Depends(get_current_user), 
+    db: Session = Depends(get_db),
+    patient_id:int | None = None,
+    response_model=List[ReportSchema]
+):
+    try:
+        user_id = user["id"]
+        patient_id = patient_id
+
+        if patient_id is None:
+            raise HTTPException(status_code=400,detail="Please Provide Patient id")
+
+        patient = db.query(Patient).filter(Patient.creator_id == user_id,Patient.id==patient_id).first()
+        if not patient:
+            raise HTTPException(status_code=404,detail="Patient Not Found")
+
+        reports = db.query(Reports).options(selectinload(Reports.reports_media)).filter(Reports.patient_id==patient_id,Reports.deleted==False).all()
+
+        return reports
+
     except HTTPException as e:
         raise e
     except Exception as e:

@@ -12,15 +12,14 @@ import {
   Users,
   X,
   FileText,
-  UploadCloud, // Added for sub-tab icon
-  List, // Added for sub-tab icon
+  UploadCloud,
+  List,
 } from "lucide-react";
 import { apiCall } from "../lib/apiCall";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
 import ReportList, { type Report } from "../components/ReportList";
 
-// Define the shape of our Patient data
 interface Patient {
   id: number;
   first_name: string;
@@ -55,10 +54,9 @@ export default function MembersDashboard() {
     fetchPatients();
   }, []);
 
-  // Reset files and sub-tabs when changing patients or main tabs
   useEffect(() => {
     setSelectedFiles([]);
-    setUploadSubTab("upload"); // Reset to upload view when switching patients
+    setUploadSubTab("upload");
   }, [selectedPatient, activeTab]);
 
   async function fetchPatients() {
@@ -115,7 +113,6 @@ export default function MembersDashboard() {
       .includes(searchQuery.toLowerCase()),
   );
 
-  // --- UPLOAD HANDLERS ---
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
@@ -150,7 +147,6 @@ export default function MembersDashboard() {
 
       toast.success("Reports uploaded successfully!");
       setSelectedFiles([]);
-      // Optionally switch to the 'view' tab to see the newly uploaded report
       setUploadSubTab("view");
     } catch (error: any) {
       toast.error(error.message || "Something went wrong during upload.");
@@ -162,7 +158,6 @@ export default function MembersDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col md:flex-row font-sans text-gray-100">
-      {/* SIDEBAR */}
       <aside className="w-full md:w-80 lg:w-96 bg-gray-900 border-r border-gray-800 flex flex-col h-screen sticky top-0">
         <div className="p-6 border-b border-gray-800">
           <div className="flex items-center justify-between mb-6">
@@ -250,7 +245,6 @@ export default function MembersDashboard() {
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden bg-gray-950">
         {selectedPatient ? (
           <>
@@ -450,7 +444,6 @@ export default function MembersDashboard() {
                 </div>
               )}
 
-              {/* ... Trends & Ask AI tabs remain unchanged ... */}
               {activeTab === "trends" && (
                 <div className="animate-fade-in">
                   <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 shadow-lg">

@@ -1,4 +1,11 @@
-import { FileText, AlertCircle, CheckCircle, Clock, ExternalLink, Image as ImageIcon } from "lucide-react";
+import {
+  FileText,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  ExternalLink,
+  Image as ImageIcon,
+} from "lucide-react";
 
 export interface ReportMedia {
   id: number;
@@ -27,12 +34,12 @@ export default function ReportList({ reports }: ReportListProps) {
   // Helper to format the ISO date string to a readable format
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(date);
   };
 
@@ -49,16 +56,17 @@ export default function ReportList({ reports }: ReportListProps) {
   return (
     <div className="space-y-4">
       {reports.map((report) => (
-        <div 
-          key={report.id} 
+        <div
+          key={report.id}
           className={`bg-gray-900 border rounded-xl p-5 transition-all duration-200 ${
-            report.error ? 'border-red-900/50 hover:border-red-500/50' : 
-            report.data_extracted ? 'border-gray-800 hover:border-green-500/50' : 
-            'border-gray-800 hover:border-blue-500/50'
+            report.error
+              ? "border-red-900/50 hover:border-red-500/50"
+              : report.data_extracted
+                ? "border-gray-800 hover:border-green-500/50"
+                : "border-gray-800 hover:border-blue-500/50"
           }`}
         >
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-            
             {/* Header & Status Info */}
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
@@ -66,7 +74,7 @@ export default function ReportList({ reports }: ReportListProps) {
                   <FileText className="text-blue-400" size={20} />
                   Report #{report.id}
                 </h3>
-                
+
                 {/* Dynamic Status Badge */}
                 {report.error ? (
                   <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium">
@@ -82,7 +90,7 @@ export default function ReportList({ reports }: ReportListProps) {
                   </span>
                 )}
               </div>
-              
+
               <p className="text-sm text-gray-400 mb-3">
                 Uploaded on {formatDate(report.created_at)}
               </p>
@@ -99,7 +107,8 @@ export default function ReportList({ reports }: ReportListProps) {
             {report.reports_media && report.reports_media.length > 0 && (
               <div className="flex gap-2 flex-wrap md:justify-end">
                 {report.reports_media.map((media) => {
-                  const isImage = media.url.match(/\.(jpeg|jpg|gif|png)$/i) != null;
+                  const isImage =
+                    media.url.match(/\.(jpeg|jpg|gif|png)$/i) != null;
                   return (
                     <a
                       key={media.id}
@@ -111,13 +120,20 @@ export default function ReportList({ reports }: ReportListProps) {
                     >
                       {isImage ? (
                         <>
-                          <img src={media.url} alt="Report scan" className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+                          <img
+                            src={media.url}
+                            alt="Report scan"
+                            className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                          />
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <ExternalLink size={16} className="text-white" />
                           </div>
                         </>
                       ) : (
-                        <ImageIcon className="text-gray-600 group-hover:text-blue-400 transition-colors" size={24} />
+                        <ImageIcon
+                          className="text-gray-600 group-hover:text-blue-400 transition-colors"
+                          size={24}
+                        />
                       )}
                     </a>
                   );

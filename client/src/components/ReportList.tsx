@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Image as ImageIcon,
 } from "lucide-react";
+import { useNavigate } from "react-router";
 
 export interface ReportMedia {
   id: number;
@@ -43,6 +44,8 @@ export default function ReportList({ reports }: ReportListProps) {
     }).format(date);
   };
 
+  const navigate = useNavigate()
+
   if (reports.length === 0) {
     return (
       <div className="p-12 border border-gray-800 rounded-2xl bg-gray-900/50 flex flex-col items-center justify-center text-center">
@@ -58,6 +61,7 @@ export default function ReportList({ reports }: ReportListProps) {
       {reports.map((report) => (
         <div
           key={report.id}
+          onClick={()=>{navigate(`/report/${report.id}/${report.patient_id}`)}}
           className={`bg-gray-900 border rounded-xl p-5 transition-all duration-200 ${
             report.error
               ? "border-red-900/50 hover:border-red-500/50"

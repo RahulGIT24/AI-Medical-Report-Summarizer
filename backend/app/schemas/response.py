@@ -14,12 +14,13 @@ class ReportSchema(BaseModel):
     data_extracted:bool
     enqueued:bool
     error:bool
+    patient_id:int
     errormsg:str
     created_at:datetime
     reports_media: List[ReportsMediaSchema] = []
 
-    class config:
-        orm=True
+    class Config:
+        form_attributes=True
 
 
 class ReportMetaDataResponse(BaseModel):

@@ -25,10 +25,10 @@ const App = () => {
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route path='/dashboard' element={<Dashboard />} />
-          <Route path='/reports' element={<ReportsPage />} />
-          <Route path='/upload' element={<UploadReportsPage />} />
-          <Route path='/chat' element={<AIChatInterface />} />
-          <Route path='/report/:id' element={<Report />} />
+          {/* <Route path='/reports' element={<ReportsPage />} /> */}
+          {/* <Route path='/upload' element={<UploadReportsPage />} /> */}
+          {/* <Route path='/chat' element={<AIChatInterface />} /> */}
+          <Route path='/report/:id/:patient_id' element={<Report />} />
           <Route path='/members' element={<MembersDashboard />} />
         </Route>
       </Routes>

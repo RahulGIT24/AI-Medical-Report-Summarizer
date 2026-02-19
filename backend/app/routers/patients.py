@@ -68,12 +68,11 @@ def get_my_patients(
         print(f"Error fetching patients: {e}") 
         raise HTTPException(status_code=500, detail="Something went wrong while fetching members")
 
-@router.get("/reports")
+@router.get("/reports",response_model=List[ReportSchema])
 def get_patient_reports(
     user: dict = Depends(get_current_user), 
     db: Session = Depends(get_db),
     patient_id:int | None = None,
-    response_model=List[ReportSchema]
 ):
     try:
         user_id = user["id"]
@@ -88,6 +87,9 @@ def get_patient_reports(
 
         reports = db.query(Reports).options(selectinload(Reports.reports_media)).filter(Reports.patient_id==patient_id,Reports.deleted==False).all()
 
+        if not reports or len(reports) == 0:
+            return []
+            
         return reports
 
     except HTTPException as e:

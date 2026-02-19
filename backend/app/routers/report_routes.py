@@ -158,46 +158,19 @@ async def delete_report(report_id:str,user=Depends(get_current_user)):
         print("Error Occured while deleting report", e)
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-@router.get("/{report_id}", response_model=ReportResponse,response_model_exclude_none=True)
-async def get_report(report_id: int, user=Depends(get_current_user)):
-    try:
-        with SessionLocal() as db:
-            report = (
-                db.query(Reports)
-                .options(
-                    joinedload(Reports.report_metadata),
-                    joinedload(Reports.test_results),
-                    joinedload(Reports.specimen_validity),
-                    joinedload(Reports.reports_media),
-                    joinedload(Reports.screening_tests),
-                    joinedload(Reports.confirmation_tests),
-                    joinedload(Reports.medications),
-                )
-                .filter(
-                    Reports.id == report_id,
-                    Reports.deleted == False,
-                    Reports.owner == user["id"]
-                )
-                .first()
-            )
-
-        if not report:
-            raise HTTPException(status_code=404, detail="Report not found")
-
-        return report
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        print("Error Occured while deleting report", e)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-
-@router.get("/summarise/{report_id}")
-async def summarise_report(report_id:int, user=Depends(get_current_user)):
+@router.get("/summarise/{report_id}/{patient_id}")
+async def summarise_report(report_id:int, patient_id:int, user=Depends(get_current_user)):
     try:
         report = None
         with SessionLocal() as db:
-            report = (db.query(Reports).filter(Reports.id == report_id, Reports.owner == user["id"]).first())
-        
+
+            patient = db.query(Patient).filter(Patient.id==patient_id,Patient.creator_id==user['id'])
+
+            if patient is None:
+                raise HTTPException(status_code=404,detail='Patient Not Found')
+            
+            report = (db.query(Reports).filter(Reports.id == report_id, Reports.patient_id == patient_id).first())
+
         if not report:
             raise HTTPException(status_code=404,detail="Report not found")
         if report:
@@ -224,13 +197,17 @@ async def summarise_report(report_id:int, user=Depends(get_current_user)):
         print("Error Occured while fetching report", e)
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-@router.get("/aisummary/{report_id}")
-async def summarise_report(report_id:int, user=Depends(get_current_user)):
+@router.get("/aisummary/{report_id}/{patient_id}")
+async def summarise_report(report_id:int, patient_id:int,user=Depends(get_current_user)):
     try:
         report = None
         with SessionLocal() as db:
-            report = (db.query(Reports).filter(Reports.id == report_id, Reports.owner == user["id"]).first())
-        
+            patient = db.query(Patient).filter(Patient.id==patient_id,Patient.creator_id==user['id'])
+            if patient is None:
+                raise HTTPException(status_code=404,detail='Patient Not Found')
+
+            report = (db.query(Reports).filter(Reports.id == report_id, Reports.patient_id == patient_id).first())
+
         if not report:
             raise HTTPException(status_code=404,detail="Report not found")
         with SessionLocal() as db:
@@ -245,4 +222,42 @@ async def summarise_report(report_id:int, user=Depends(get_current_user)):
         raise e
     except Exception as e:
         print("Error Occured while fetching report", e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@router.get("/{report_id}/{patient_id}", response_model=ReportResponse,response_model_exclude_none=True)
+async def get_report(report_id: int,patient_id:int, user=Depends(get_current_user)):
+    try:
+        with SessionLocal() as db:
+            patient = db.query(Patient.creator_id == user["id"])
+
+            if not patient:
+                raise HTTPException(status_code=404, detail="Patient Not Found") 
+
+            report = (
+                db.query(Reports)
+                .options(
+                    joinedload(Reports.report_metadata),
+                    joinedload(Reports.test_results),
+                    joinedload(Reports.specimen_validity),
+                    joinedload(Reports.reports_media),
+                    joinedload(Reports.screening_tests),
+                    joinedload(Reports.confirmation_tests),
+                    joinedload(Reports.medications),
+                )
+                .filter(
+                    Reports.id == report_id,
+                    Reports.deleted == False,
+                    Reports.patient_id == patient_id
+                )
+                .first()
+            )
+
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found")
+
+        return report
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print("Error Occured while deleting report", e)
         raise HTTPException(status_code=500, detail="Internal Server Error")

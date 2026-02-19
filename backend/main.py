@@ -37,7 +37,7 @@ from app.routers.patients import router as patient_routes
 app.include_router(router=report_routes)
 app.include_router(router=auth_routes)
 app.include_router(router=user_routes)
-app.include_router(router=chat_routes)
+# app.include_router(router=chat_routes)
 app.include_router(router=patient_routes)
 
 if __name__ == "__main__":

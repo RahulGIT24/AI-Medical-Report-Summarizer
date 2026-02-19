@@ -8,7 +8,7 @@ from .SpecimenValidity import SpecimenValidity
 from .ScreeningTests import ScreeningTests
 from .TestResults import TestResults
 from .ReportsMedia import ReportsMedia
-from .ChatSession import ChatSession
+# from .ChatSession import ChatSession
 from .Chat import Chat
 from .AISummary import AISummary
 from .Patient import Patient

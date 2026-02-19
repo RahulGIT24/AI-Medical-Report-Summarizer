@@ -180,7 +180,7 @@ def process_reports(report_ids: list[int]):
 
             Reports.mark_completed(db=db,id=rid)
             logger.info(f"Report id -> {rid}. Processed Successfully")
-            # raw_data_vectorization.enqueue(vectorize_raw_report_data,raw_report_vectorize)
+            raw_data_vectorization.enqueue(vectorize_raw_report_data,raw_report_vectorize)
     except Exception as e:
             # 2. ROLLBACK IMMEDIATELY
             db.rollback()

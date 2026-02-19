@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
 from app.db import get_db
 from fastapi.responses import JSONResponse
-from app.models import Reports,ChatSession,Patient
+from app.models import Reports,Patient
 from datetime import datetime
 from app.schemas import ReportSchema
 from typing import List

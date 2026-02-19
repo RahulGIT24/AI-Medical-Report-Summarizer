@@ -18,7 +18,7 @@ class Patient(Base):
     creator_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     dob: Mapped[date] = mapped_column(Date, nullable=False)
     reports: Mapped[List["Reports"]] = relationship(back_populates="patient",cascade="all, delete-orphan")
-    chat_session: Mapped[List["ChatSession"]] = relationship(back_populates="patient",cascade="all, delete-orphan")
+    # chat_session: Mapped[List["ChatSession"]] = relationship(back_populates="patient",cascade="all, delete-orphan")
     creator: Mapped["User"] = relationship("User", foreign_keys=[creator_id])
 
     created_at: Mapped[datetime] = mapped_column(

@@ -291,15 +291,6 @@ export default function MembersDashboard() {
                     <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 rounded-t-full" />
                   )}
                 </button>
-                <button
-                  onClick={() => setActiveTab("ask")}
-                  className={`pb-4 text-sm font-medium transition-colors relative flex items-center gap-2 ${activeTab === "ask" ? "text-blue-400" : "text-gray-400 hover:text-gray-200"}`}
-                >
-                  <MessageSquare size={18} /> Ask AI
-                  {activeTab === "ask" && (
-                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 rounded-t-full" />
-                  )}
-                </button>
               </div>
             </header>
 

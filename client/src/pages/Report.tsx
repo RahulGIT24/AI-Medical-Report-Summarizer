@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  MoveUpRight,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router";
 import { apiCall } from "../lib/apiCall";
@@ -106,28 +107,59 @@ interface Report {
   medications?: ReportedMedication[];
 }
 
+const Section = ({
+  title,
+  icon: Icon,
+  children,
+  isExpanded,
+  onToggle,
+}: any) => {
+  return (
+    <div className="bg-gray-800/60 backdrop-blur-xl rounded-2xl border border-gray-700 overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full p-6 flex items-center justify-between hover:bg-gray-700/30 transition-colors"
+      >
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
+            <Icon className="text-white" size={20} />
+          </div>
+          <h2 className="text-xl font-bold text-white">{title}</h2>
+        </div>
+        {isExpanded ? (
+          <ChevronUp className="text-gray-400" size={24} />
+        ) : (
+          <ChevronDown className="text-gray-400" size={24} />
+        )}
+      </button>
+      {isExpanded && <div className="px-6 pb-6">{children}</div>}
+    </div>
+  );
+};
+
 const ReportDetailPage = () => {
   const navigate = useNavigate();
   const { id, patient_id } = useParams();
   const [report, setReport] = useState<Report | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingReport, setLoadingReport] = useState(true);
+  const [loadingSummary, setLoadingSummary] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(["metadata", "test-results", "summary"]),
   );
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [showMediaModal, setShowMediaModal] = useState(false);
-  const [summarizing, setSummarizing] = useState(false);
-  const [generatedSummary, setGeneratedSummary] = useState("");
+  const [summary, setSummary] = useState<null | string>(null);
 
   const handleSummarize = async () => {
+    if (summary) return;
     try {
-      setSummarizing(true);
+      setLoadingSummary(true);
       const response = await apiCall(`/report/summarise/${id}/${patient_id}`);
-      setGeneratedSummary(response.summary);
+      setSummary(response.summary);
     } catch (error) {
       toast.error("Error occured while summarising report");
     } finally {
-      setSummarizing(false);
+      setLoadingSummary(false);
     }
   };
 
@@ -139,23 +171,24 @@ const ReportDetailPage = () => {
   const fetchReport = async () => {
     try {
       if (!id || !patient_id) navigate("/dashboard");
-      setLoading(true);
+      setLoadingReport(true);
       const response = await apiCall(`/report/${id}/${patient_id}`);
       setReport(response);
     } catch (error) {
       navigate("/dashboard");
     } finally {
-      setLoading(false);
+      setLoadingReport(false);
     }
   };
+
   const fetchSummary = async () => {
     try {
-      setLoading(true);
+      setLoadingSummary(true);
       const response = await apiCall(`/report/aisummary/${id}/${patient_id}`);
-      setGeneratedSummary(response.aisummary);
+      setSummary(response.aisummary);
     } catch (error) {
     } finally {
-      setLoading(false);
+      setLoadingSummary(false);
     }
   };
 
@@ -220,7 +253,7 @@ const ReportDetailPage = () => {
     }
   };
 
-  if (loading) {
+  if (loadingReport) {
     return (
       <div className="min-h-screen bg-linear-to-br from-gray-900 via-slate-900 to-gray-900 flex items-center justify-center">
         <Loader2 className="animate-spin text-blue-400" size={48} />
@@ -247,31 +280,6 @@ const ReportDetailPage = () => {
     );
   }
 
-  const Section = ({ title, icon: Icon, children, sectionKey }: any) => {
-    const isExpanded = expandedSections.has(sectionKey);
-    return (
-      <div className="bg-gray-800/60 backdrop-blur-xl rounded-2xl border border-gray-700 overflow-hidden">
-        <button
-          onClick={() => toggleSection(sectionKey)}
-          className="w-full p-6 flex items-center justify-between hover:bg-gray-700/30 transition-colors"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
-              <Icon className="text-white" size={20} />
-            </div>
-            <h2 className="text-xl font-bold text-white">{title}</h2>
-          </div>
-          {isExpanded ? (
-            <ChevronUp className="text-gray-400" size={24} />
-          ) : (
-            <ChevronDown className="text-gray-400" size={24} />
-          )}
-        </button>
-        {isExpanded && <div className="px-6 pb-6">{children}</div>}
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-900 via-slate-900 to-gray-900">
       {/* Header */}
@@ -280,7 +288,7 @@ const ReportDetailPage = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate("/reports")}
+                onClick={() => navigate("/dashboard")}
                 className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700 rounded-lg"
               >
                 <ArrowLeft size={24} />
@@ -295,13 +303,24 @@ const ReportDetailPage = () => {
                 </p>
               </div>
             </div>
-            <button
-              onClick={downloadAllMedia}
-              className="bg-linear-to-r from-blue-600 to-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 flex items-center space-x-2"
-            >
-              <Download size={20} />
-              <span>Download All</span>
-            </button>
+            <div className="flex gap-x-3">
+              <button
+                onClick={downloadAllMedia}
+                className="bg-linear-to-r from-blue-600 to-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 flex items-center space-x-2"
+              >
+                <span>Download All</span>
+                <Download size={20} />
+              </button>
+              <button
+                onClick={() => {
+                  navigate(`/chat/${report.id}/${patient_id}`);
+                }}
+                className="bg-linear-to-r from-blue-600 to-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 flex items-center space-x-2"
+              >
+                <span>Chat with Report</span>
+                <MoveUpRight size={20} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -323,7 +342,12 @@ const ReportDetailPage = () => {
 
         {/* Report Media */}
         {report.reports_media && report.reports_media.length > 0 && (
-          <Section title="Report Files" icon={FileText} sectionKey="media">
+          <Section
+            title="Report Files"
+            icon={FileText}
+            isExpanded={expandedSections.has("media")}
+            onToggle={() => toggleSection("media")}
+          >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {report.reports_media.map((media, index) => (
                 <div
@@ -350,19 +374,22 @@ const ReportDetailPage = () => {
             </div>
           </Section>
         )}
+
+        {/* AI Summary */}
         {report.reports_media && report.reports_media.length > 0 && (
           <Section
             title="AI Report Summary"
             icon={FileText}
-            sectionKey="summary"
+            isExpanded={expandedSections.has("summary")}
+            onToggle={() => toggleSection("summary")}
           >
             <div className="flex flex-col gap-3">
               <p className="text-gray-300">
-                {generatedSummary
+                {summary
                   ? "AI Generated summary of report"
                   : "Summarize Report using AI"}
               </p>
-              {!summarizing && !generatedSummary && (
+              {!loadingSummary && !summary && (
                 <button
                   onClick={() => {
                     handleSummarize();
@@ -376,7 +403,7 @@ const ReportDetailPage = () => {
                   </div>
                 </button>
               )}
-              {summarizing && (
+              {loadingSummary && (
                 <div className="flex justify-center items-center">
                   {" "}
                   <p
@@ -388,13 +415,13 @@ const ReportDetailPage = () => {
                   </p>
                 </div>
               )}
-              {generatedSummary && (
+              {summary && (
                 <div
                   className={`px-4 py-3 rounded-xl bg-gray-800/70 border border-gray-700 
                                         text-white font-medium backdrop-blur-sm transition-all duration-300
-                                        ${generatedSummary ? "animate-fadeIn" : "hidden"}`}
+                                        ${summary ? "animate-fadeIn" : "hidden"}`}
                 >
-                  <Typewriter text={generatedSummary} />
+                  <Typewriter text={summary} />
                 </div>
               )}
             </div>
@@ -406,7 +433,8 @@ const ReportDetailPage = () => {
           <Section
             title="Patient & Report Information"
             icon={User}
-            sectionKey="metadata"
+            isExpanded={expandedSections.has("metadata")}
+            onToggle={() => toggleSection("metadata")}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {report.report_metadata.patient_name && (
@@ -495,7 +523,12 @@ const ReportDetailPage = () => {
 
         {/* Test Results */}
         {report.test_results && report.test_results.length > 0 && (
-          <Section title="Test Results" icon={Beaker} sectionKey="test-results">
+          <Section
+            title="Test Results"
+            icon={Beaker}
+            isExpanded={expandedSections.has("test-results")}
+            onToggle={() => toggleSection("test-results")}
+          >
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -570,7 +603,8 @@ const ReportDetailPage = () => {
           <Section
             title="Specimen Validity"
             icon={CheckCircle2}
-            sectionKey="specimen"
+            isExpanded={expandedSections.has("specimen")}
+            onToggle={() => toggleSection("specimen")}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {report.specimen_validity.is_valid !== undefined && (
@@ -646,7 +680,12 @@ const ReportDetailPage = () => {
 
         {/* Screening Tests */}
         {report.screening_tests && report.screening_tests.length > 0 && (
-          <Section title="Screening Tests" icon={Beaker} sectionKey="screening">
+          <Section
+            title="Screening Tests"
+            icon={Beaker}
+            isExpanded={expandedSections.has("screening")}
+            onToggle={() => toggleSection("screening")}
+          >
             <div className="space-y-3">
               {report.screening_tests.map((test, index) => (
                 <div
@@ -684,7 +723,8 @@ const ReportDetailPage = () => {
           <Section
             title="Confirmation Tests"
             icon={Beaker}
-            sectionKey="confirmation"
+            isExpanded={expandedSections.has("confirmation")}
+            onToggle={() => toggleSection("confirmation")}
           >
             <div className="space-y-3">
               {report.confirmation_tests.map((test, index) => (
@@ -738,7 +778,8 @@ const ReportDetailPage = () => {
           <Section
             title="Reported Medications"
             icon={Pill}
-            sectionKey="medications"
+            isExpanded={expandedSections.has("medications")}
+            onToggle={() => toggleSection("medications")}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {report.medications.map((med, index) => (

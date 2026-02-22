@@ -91,7 +91,7 @@ def query_report_with_ai(patient_id:int,report_id:int,user=Depends(get_current_u
       if patient is None:
           raise HTTPException(status_code=404,detail='Patient Not found')
 
-      report = db.query(Reports).filter(Reports.id==report_id,Reports.patient_id==patient_id).first()
+      report = db.query(Reports).filter(Reports.id==report_id,Reports.patient_id==patient_id,Reports.deleted==False,Reports.error==False,Reports.data_extracted==True).first()
       if report is None:
           raise HTTPException(status_code=404,detail="Report not found")
       

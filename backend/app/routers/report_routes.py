@@ -90,28 +90,22 @@ async def upload_files(
     )
 
 @router.get("/search")
-async def query_reports(query: str,session_id:str,user=Depends(get_current_user)):
+async def query_reports(query: str,patient_id:int,report_id:int,user=Depends(get_current_user)):
     user_id=user["id"]
-    if not query:
-        raise HTTPException(status_code=400, detail="Missing query")
-
-    if not session_id:
-        raise HTTPException(status_code=400, detail="Session not specified")
-
-    global previous_chats
+    patient_id = patient_id
+    report_id = report_id
 
     try:
         with SessionLocal() as db:
-            previous_chats = Chat.get_chats_for_context(limit=6,db=db,session_id=session_id)
-            user_c = Chat(
-                session=session_id,
-                content=query,
-                role="user",
-            )
-            db.add(user_c)
-            db.commit()
+            patient = db.query(Patient).filter(Patient.creator_id == int(user_id), Patient.id == patient_id).first()
+            if not patient:
+                raise HTTPException(status_code=400, detail="Patient Not Found")
+            report = db.query(Reports).filter(Reports.patient_id==patient_id,Reports.deleted==False,Reports.error==False,Reports.data_extracted==True).first()
+            if not report:
+                raise HTTPException(status_code=400, detail="Report Not Found")
 
-        points = client.similarity_search_collection1(query_str=query,top_k=10,user_id=1)
+
+        points = client.similarity_search_collection1(query_str=query,top_k=10,report_id=report_id)
         context = []
         response_buffer = []
 
@@ -123,19 +117,10 @@ async def query_reports(query: str,session_id:str,user=Depends(get_current_user)
 
         llm_instance = llm_class(prompt=get_query_prompt(), report_data=None)
         def generate():
-            for token in llm_instance.call_llm_stream(query, q_context=encode(context),prev_context=encode(previous_chats)):
+            for token in llm_instance.call_llm_stream(query, q_context=encode(context)):
                 response_buffer.append(token)
                 yield f"data: {json.dumps({'token': token})}\n\n"
-            full_response = "".join(response_buffer)
-            with SessionLocal() as db:
-                assistant = Chat(
-                    session=session_id,
-                    content=full_response,
-                    role="assistant",
-                )
-            db.add(assistant)
-            db.commit()
-
+            # full_response = "".join(response_buffer)
             yield "event: end\ndata: [DONE]\n\n"
 
         return StreamingResponse(generate(), media_type="text/event-stream")
@@ -169,7 +154,7 @@ async def summarise_report(report_id:int, patient_id:int, user=Depends(get_curre
             if patient is None:
                 raise HTTPException(status_code=404,detail='Patient Not Found')
             
-            report = (db.query(Reports).filter(Reports.id == report_id, Reports.patient_id == patient_id).first())
+            report = (db.query(Reports).filter(Reports.id == report_id, Reports.patient_id == patient_id,Reports.deleted==False,Reports.error==False,Reports.data_extracted==True).first())
 
         if not report:
             raise HTTPException(status_code=404,detail="Report not found")
@@ -206,7 +191,7 @@ async def summarise_report(report_id:int, patient_id:int,user=Depends(get_curren
             if patient is None:
                 raise HTTPException(status_code=404,detail='Patient Not Found')
 
-            report = (db.query(Reports).filter(Reports.id == report_id, Reports.patient_id == patient_id).first())
+            report = (db.query(Reports).filter(Reports.id == report_id, Reports.patient_id == patient_id,Reports.deleted==False,Reports.error==False,Reports.data_extracted==True).first())
 
         if not report:
             raise HTTPException(status_code=404,detail="Report not found")
@@ -247,7 +232,8 @@ async def get_report(report_id: int,patient_id:int, user=Depends(get_current_use
                 .filter(
                     Reports.id == report_id,
                     Reports.deleted == False,
-                    Reports.patient_id == patient_id
+                    Reports.patient_id == patient_id,
+                    Reports.error==False,Reports.data_extracted==True
                 )
                 .first()
             )

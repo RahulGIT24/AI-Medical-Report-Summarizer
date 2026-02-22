@@ -68,7 +68,7 @@ class Qdrant:
         except Exception as e:
             print("Error while storing raw_report embeddings",e)
     
-    def similarity_search_collection1(self,user_id,query_str,top_k=10):
+    def similarity_search_collection1(self,report_id,query_str,top_k=10):
         try:
             search_res = self.client.query_points(
                 collection_name=QDRANT_COLLECTION_1,
@@ -98,8 +98,8 @@ class Qdrant:
                 query_filter=models.Filter(
                     must=[
                         models.FieldCondition(
-                            key="user_id",
-                            match=models.MatchValue(value=str(user_id)),
+                            key="report_id",
+                            match=models.MatchValue(value=str(report_id)),
                         )
                     ]
                 )

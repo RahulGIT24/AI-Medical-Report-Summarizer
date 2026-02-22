@@ -51,7 +51,7 @@ class Reports(Base):
 
     @classmethod
     def get_report(cls,db:Session,id:int):
-        report = db.query(cls).filter(cls.id == id,cls.deleted==False).first()
+        report = db.query(cls).filter(cls.id == id,cls.deleted==False,cls.error==False).first()
         if not report:
             return None
         if report.error or report.data_extracted:

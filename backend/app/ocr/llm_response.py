@@ -77,7 +77,7 @@ class llm_class:
            result = response.invoke({"raw_ocr_text": self.raw_ocr_text})
            return result.content
     
-    def call_llm_stream(self, user_q, q_context,prev_context):
+    def call_llm_stream(self, user_q, q_context,prev_context=[]):
         self.chain_prompt()
         response = self.prompt_template | llm  # Groq pipeline
 

@@ -6,8 +6,6 @@ import Dashboard from './pages/dashboard'
 import PublicRoute from './pages/auth/Public'
 import ProtectedRoute from './pages/auth/Protected'
 import AIChatInterface from './pages/Chat'
-import ReportsPage from './pages/MyReports'
-import UploadReportsPage from './pages/UploadFile'
 import Report from './pages/Report'
 import VerifyAccount from './pages/auth/VerifyAccount'
 import MembersDashboard from './pages/MyMembers'
@@ -27,7 +25,7 @@ const App = () => {
           <Route path='/dashboard' element={<Dashboard />} />
           {/* <Route path='/reports' element={<ReportsPage />} /> */}
           {/* <Route path='/upload' element={<UploadReportsPage />} /> */}
-          {/* <Route path='/chat' element={<AIChatInterface />} /> */}
+          <Route path='/chat/:id/:patient_id' element={<AIChatInterface />} />
           <Route path='/report/:id/:patient_id' element={<Report />} />
           <Route path='/members' element={<MembersDashboard />} />
         </Route>

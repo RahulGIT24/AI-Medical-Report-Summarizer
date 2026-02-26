@@ -437,25 +437,9 @@ export default function MembersDashboard() {
               )}
 
               {activeTab === "trends" && (
-                <div className="animate-fade-in">
-                  <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 shadow-lg">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="p-2 bg-green-500/20 rounded-lg">
-                        <Activity className="text-green-400" size={24} />
-                      </div>
-                      <h3 className="text-xl font-bold text-white">
-                        Health Biomarkers over Time
-                      </h3>
-                    </div>
-                    
-                    {/* Replaced Content: Chart Container */}
-                    <div className="h-80 w-full border border-gray-800 rounded-xl bg-gray-950 p-4">
-                      {/* Pass the actual patientId and the test you want to visualize */}
-                      <HealthTrendChart patientId={selectedPatient.id} testName="Creatinine" /> 
-                    </div>
-                  </div>
-                </div>
+                <HealthTrendChart patientId={selectedPatient.id} />
               )}
+
               {activeTab === "ask" && (
                 <div className="animate-fade-in h-full flex flex-col">
                   <div className="flex-1 bg-gray-900 rounded-2xl border border-gray-800 p-6 flex flex-col shadow-lg min-h-[400px]">

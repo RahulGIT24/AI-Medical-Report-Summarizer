@@ -33,12 +33,14 @@ from app.routers.auth import router as auth_routes
 from app.routers.user import router as user_routes
 from app.routers.chat import router as chat_routes
 from app.routers.patients import router as patient_routes
+from app.routers.trends import router as trends_routes
 
 app.include_router(router=report_routes)
 app.include_router(router=auth_routes)
 app.include_router(router=user_routes)
 # app.include_router(router=chat_routes)
 app.include_router(router=patient_routes)
+app.include_router(router=trends_routes)
 
 if __name__ == "__main__":
     # import os

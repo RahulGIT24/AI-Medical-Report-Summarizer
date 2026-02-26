@@ -19,6 +19,7 @@ import { apiCall } from "../lib/apiCall";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router";
 import ReportList, { type Report } from "../components/ReportList";
+import HealthTrendChart from "../components/HealthTrendChart";
 
 interface Patient {
   id: number;
@@ -446,13 +447,15 @@ export default function MembersDashboard() {
                         Health Biomarkers over Time
                       </h3>
                     </div>
-                    <div className="h-64 flex items-center justify-center border border-gray-800 rounded-xl bg-gray-950 text-gray-500">
-                      [ Interactive Line Charts will render here ]
+                    
+                    {/* Replaced Content: Chart Container */}
+                    <div className="h-80 w-full border border-gray-800 rounded-xl bg-gray-950 p-4">
+                      {/* Pass the actual patientId and the test you want to visualize */}
+                      <HealthTrendChart patientId={selectedPatient.id} testName="Creatinine" /> 
                     </div>
                   </div>
                 </div>
               )}
-
               {activeTab === "ask" && (
                 <div className="animate-fade-in h-full flex flex-col">
                   <div className="flex-1 bg-gray-900 rounded-2xl border border-gray-800 p-6 flex flex-col shadow-lg min-h-[400px]">

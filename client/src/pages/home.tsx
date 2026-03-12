@@ -107,9 +107,9 @@ export default function HealthScanLanding() {
               </a>
               <button
                 className="bg-linear-to-r from-blue-600 to-green-600 text-white px-6 py-2 rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 transform hover:scale-105 cursor-pointer"
-                onClick={renderToSignUp}
+                onClick={()=>{navigate('/signin')}}
               >
-                Get Started
+                Login Now
               </button>
             </div>
 
@@ -172,7 +172,7 @@ export default function HealthScanLanding() {
                 className="group bg-linear-to-r from-blue-600 to-green-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 cursor-pointer"
                 onClick={renderToSignUp}
               >
-                <span>Start Free Trial</span>
+                <span>Create Account Now</span>
                 <ArrowRight
                   className="group-hover:translate-x-1 transition-transform"
                   size={20}

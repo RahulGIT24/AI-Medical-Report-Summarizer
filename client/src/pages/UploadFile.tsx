@@ -162,7 +162,7 @@ const UploadReportsPage = () => {
         }
       }, 300);
 
-      const response = await apiCall("/report/upload", 'POST', formData, "multipart/form-data");
+      await apiCall("/report/upload", 'POST', formData, "multipart/form-data");
       clearInterval(progressInterval);
 
       // Update to success

@@ -30,7 +30,7 @@ const HealthTrendChart = ({ patientId }: { patientId: number }) => {
       try {
         setLoading(true);
         const response = await apiCall(
-          `/trends?patient_id=${patientId}&test_name=Morphine`,
+          `/trends?patient_id=${patientId}&test_name=${currentSelectedTrend ?? test_names[0]}`,
         );
 
         const formattedData = response.trends.map((item: any) => ({

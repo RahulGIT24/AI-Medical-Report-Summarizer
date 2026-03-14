@@ -9,28 +9,34 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { apiCall } from "../lib/apiCall";
-import { useNavigate } from "react-router";
 import { Activity, Loader2Icon } from "lucide-react";
 
-const HealthTrendChart = ({ patientId }: { patientId: number }) => {
+const HealthTrendChart = ({
+  patientId,
+  currentSelectedTrend,
+  setCurrentSelectedTrend,
+  test_names,
+  set_test_names,
+}: {
+  patientId: number;
+  currentSelectedTrend: string | null;
+  setCurrentSelectedTrend: (args: string | null) => void;
+  test_names:string[];
+  set_test_names:(args:string[])=>void;
+}) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [dropdown, setDropDown] = useState(false);
 
-  const [currentSelectedTrend, setCurrentSelectedTrend] = useState<
-    string | null
-  >(null);
-
-  const [test_names, set_test_names] = useState<string[]>([]);
-
   useEffect(() => {
     const fetchTrends = async () => {
       try {
         setLoading(true);
+
         const response = await apiCall(
-          `/trends?patient_id=${patientId}&test_name=Morphine`,
+          `/trends?patient_id=${patientId}&test_name=${currentSelectedTrend ?? test_names[0]}`,
         );
 
         const formattedData = response.trends.map((item: any) => ({
@@ -49,38 +55,43 @@ const HealthTrendChart = ({ patientId }: { patientId: number }) => {
       }
     };
 
-    if (patientId && currentSelectedTrend) fetchTrends();
+    if (patientId && currentSelectedTrend) {
+      fetchTrends();
+    }
   }, [patientId, currentSelectedTrend]);
 
-  const fetchTestNames = async () => {
-    try {
-      if (!patientId) return;
-      setLoading(true);
-      const response = await apiCall(
-        `/trends/get-test-names?patient_id=${patientId}`,
-      );
-      set_test_names(response.tests);
-      setCurrentSelectedTrend(response.tests[0]);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const navigate = useNavigate();
-
   useEffect(() => {
-    if (!patientId) {
-      navigate("/");
+    setData([])
+    setCurrentSelectedTrend(null);
+    const fetchTestNames = async () => {
+      try {
+        setLoading(true);
+
+        const response = await apiCall(
+          `/trends/get-test-names?patient_id=${patientId}`,
+        );
+
+        set_test_names(response.tests);
+
+        if (response.tests.length > 0) {
+          setCurrentSelectedTrend(response.tests[0]);
+        }
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (patientId) {
+      fetchTestNames();
     }
-    fetchTestNames();
   }, [patientId]);
 
   if (loading) {
     return (
       <div className="h-[40vh] w-full flex items-center justify-center text-gray-500">
-        <Loader2Icon size={44} className="animate-spin"/>
+        <Loader2Icon size={44} className="animate-spin" />
       </div>
     );
   }

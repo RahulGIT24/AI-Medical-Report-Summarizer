@@ -55,7 +55,7 @@ async def analyze_trends(patient_id:int,test_name:str,user=Depends(get_current_u
             trend_data.append(
                 TrendDataPoint(
                     date=report_date,
-                    value=int(test.result_value),
+                    value=float(test.result_value),
                     unit=test.unit,
                     outcome=test.outcome
                 )
@@ -87,7 +87,7 @@ async def get_test_names_for_patient(patient_id:int,user=Depends(get_current_use
         distinct_names = (db.query(TestResults.test_name)
             .join(Reports,Reports.id == TestResults.report_id)
             .filter(Reports.patient_id==patient_id)
-            .filter(TestResults.test_name.isnot(None))
+            .filter(TestResults.test_name.isnot(None),TestResults.result_value.isnot(None))
             .distinct()
             .all()
         )

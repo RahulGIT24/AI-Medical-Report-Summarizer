@@ -12,6 +12,7 @@ import {
   FileText,
   UploadCloud,
   List,
+  ArrowLeft,
 } from "lucide-react";
 import { apiCall } from "../lib/apiCall";
 import { toast } from "react-toastify";
@@ -168,6 +169,17 @@ export default function MembersDashboard() {
         <div className="p-6 border-b border-gray-800">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-white flex items-center gap-2 tracking-tight">
+              <motion.button
+                whileHover={{
+                  scale: 1.05,
+                  backgroundColor: "rgba(31, 41, 55, 1)",
+                }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate(`/dashboard`)}
+                className="text-gray-400 hover:text-white transition-colors p-2 rounded-xl border border-transparent hover:border-gray-700"
+              >
+                <ArrowLeft size={22} />
+              </motion.button>
               <Users className="text-blue-400" size={24} />
               Family Members
             </h2>
@@ -222,8 +234,8 @@ export default function MembersDashboard() {
                   key={patient.id}
                   onClick={() => {
                     setCurrentSelectedTrend(null);
-                    set_test_names([])
-                    setSelectedPatient(patient)
+                    set_test_names([]);
+                    setSelectedPatient(patient);
                   }}
                   className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all duration-300 border text-left group ${
                     selectedPatient?.id === patient.id

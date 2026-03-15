@@ -5,7 +5,7 @@ import { ToastContainer } from 'react-toastify'
 
 createRoot(document.getElementById('root')!).render(
   <>
-    <ToastContainer position='bottom-center'/>
+    <ToastContainer position='bottom-right' theme='dark'/>
     <App />
   </>,
 )

@@ -73,7 +73,7 @@ const Dashboard = () => {
 
   const stats = [
     {
-      label: "Total Family Members",
+      label: "Total Members",
       value: userStats.members.toString(),
       icon: FileText,
       delay: 0.2

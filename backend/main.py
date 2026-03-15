@@ -8,7 +8,8 @@ import app.models
 from app.lib.seed import seed_in
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.lib import UPLOADS_DIR, qdrant
+from app.lib import UPLOADS_DIR
+import os
 
 app=FastAPI()
 
@@ -25,6 +26,7 @@ app.add_middleware(
 # Base.metadata.drop_all(engine)
 Base.metadata.create_all(engine)
 
+os.makedirs(UPLOADS_DIR,exist_ok=True)
 app.mount("/uploads",StaticFiles(directory=UPLOADS_DIR), name="static")
 
 # routers imported

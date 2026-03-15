@@ -1,0 +1,9 @@
+.venv
+.env
+logs
+Dockerfile
+output
+public/processed
+public/sample_data
+public/uploads
+__pycache__

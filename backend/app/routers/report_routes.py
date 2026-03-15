@@ -11,7 +11,7 @@ from app.ocr import llm_class
 from app.schemas import ReportResponse
 import json
 from sqlalchemy.orm import joinedload
-from toon_python import encode
+# from toon_python import encode
 
 MAPPINGS = {
     "specimen_validity":SpecimenValidity,
@@ -117,7 +117,7 @@ async def query_reports(query: str,patient_id:int,report_id:int,user=Depends(get
 
         llm_instance = llm_class(prompt=get_query_prompt(), report_data=None)
         def generate():
-            for token in llm_instance.call_llm_stream(query, q_context=encode(context)):
+            for token in llm_instance.call_llm_stream(query, q_context=context):
                 response_buffer.append(token)
                 yield f"data: {json.dumps({'token': token})}\n\n"
             # full_response = "".join(response_buffer)

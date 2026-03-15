@@ -8,9 +8,7 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Pill,
   ChevronDown,
-  ChevronUp,
   Loader2,
   Eye,
   ChevronLeft,
@@ -22,6 +20,7 @@ import { useNavigate, useParams } from "react-router";
 import { apiCall } from "../lib/apiCall";
 import { toast } from "react-toastify";
 import { Typewriter } from "../components/TypeWriter";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ReportMetaData {
   patient_name?: string;
@@ -107,33 +106,48 @@ interface Report {
   medications?: ReportedMedication[];
 }
 
-const Section = ({
-  title,
-  icon: Icon,
-  children,
-  isExpanded,
-  onToggle,
-}: any) => {
+// Polished Reusable Section Component with Framer Motion
+const Section = ({ title, icon: Icon, children, isExpanded, onToggle, delay = 0 }: any) => {
   return (
-    <div className="bg-gray-800/60 backdrop-blur-xl rounded-2xl border border-gray-700 overflow-hidden">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5, delay }}
+      className="bg-gray-900/80 backdrop-blur-xl rounded-3xl border border-gray-800 overflow-hidden shadow-lg shadow-black/20"
+    >
       <button
         onClick={onToggle}
-        className="w-full p-6 flex items-center justify-between hover:bg-gray-700/30 transition-colors"
+        className="w-full p-5 sm:p-6 flex items-center justify-between hover:bg-gray-800/50 transition-colors group"
       >
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
-            <Icon className="text-white" size={20} />
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-gray-800 border border-gray-700 rounded-xl flex items-center justify-center shadow-inner group-hover:bg-gray-700 transition-colors">
+            <Icon className="text-blue-400" size={24} />
           </div>
-          <h2 className="text-xl font-bold text-white">{title}</h2>
+          <h2 className="text-xl font-bold text-white tracking-tight">{title}</h2>
         </div>
-        {isExpanded ? (
-          <ChevronUp className="text-gray-400" size={24} />
-        ) : (
-          <ChevronDown className="text-gray-400" size={24} />
-        )}
+        <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.3, ease: "easeInOut" }}>
+          <ChevronDown className="text-gray-500 group-hover:text-gray-300" size={24} />
+        </motion.div>
       </button>
-      {isExpanded && <div className="px-6 pb-6">{children}</div>}
-    </div>
+      
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="px-5 sm:px-6 pb-6 pt-2">
+              <div className="border-t border-gray-800/50 pt-6">
+                {children}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 
@@ -144,7 +158,7 @@ const ReportDetailPage = () => {
   const [loadingReport, setLoadingReport] = useState(true);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["metadata", "test-results", "summary"]),
+    new Set(["metadata", "test-results", "summary"])
   );
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [showMediaModal, setShowMediaModal] = useState(false);
@@ -157,7 +171,7 @@ const ReportDetailPage = () => {
       const response = await apiCall(`/report/summarise/${id}/${patient_id}`);
       setSummary(response.summary);
     } catch (error) {
-      toast.error("Error occured while summarising report");
+      toast.error("Error occurred while summarising report");
     } finally {
       setLoadingSummary(false);
     }
@@ -211,7 +225,7 @@ const ReportDetailPage = () => {
         window.open(media.url, "_blank");
       }, index * 100);
     });
-    toast.success("Downloading all files");
+    toast.success("Downloading all files...");
   };
 
   const formatDate = (dateString?: string) => {
@@ -226,27 +240,21 @@ const ReportDetailPage = () => {
     });
   };
 
-  const getOutcomeColor = (
-    outcome?: string,
-    isAbnormal?: boolean,
-    isCritical?: boolean,
-  ) => {
-    if (isCritical) return "text-red-400 bg-red-500/10 border-red-500/50";
-    if (isAbnormal)
-      return "text-yellow-400 bg-yellow-500/10 border-yellow-500/50";
-    if (outcome?.toLowerCase().includes("positive"))
-      return "text-red-400 bg-red-500/10 border-red-500/50";
-    if (outcome?.toLowerCase().includes("negative"))
-      return "text-green-400 bg-green-500/10 border-green-500/50";
-    return "text-gray-400 bg-gray-500/10 border-gray-500/50";
+  const getOutcomeColor = (outcome?: string, isAbnormal?: boolean, isCritical?: boolean) => {
+    if (isCritical) return "text-red-400 bg-red-500/10 border-red-500/20";
+    if (isAbnormal) return "text-yellow-400 bg-yellow-500/10 border-yellow-500/20";
+    if (outcome?.toLowerCase().includes("positive")) return "text-red-400 bg-red-500/10 border-red-500/20";
+    if (outcome?.toLowerCase().includes("negative")) return "text-green-400 bg-green-500/10 border-green-500/20";
+    return "text-gray-300 bg-gray-800 border-gray-700";
   };
 
-  const navigateMedia = (direction: "next" | "prev") => {
+  const navigateMedia = (direction: "next" | "prev", e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!report?.reports_media) return;
 
     if (direction === "next") {
       setSelectedMediaIndex((prev) =>
-        prev < report.reports_media!.length - 1 ? prev + 1 : prev,
+        prev < report.reports_media!.length - 1 ? prev + 1 : prev
       );
     } else {
       setSelectedMediaIndex((prev) => (prev > 0 ? prev - 1 : prev));
@@ -255,174 +263,145 @@ const ReportDetailPage = () => {
 
   if (loadingReport) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-gray-900 via-slate-900 to-gray-900 flex items-center justify-center">
-        <Loader2 className="animate-spin text-blue-400" size={48} />
+      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center font-sans">
+        <Loader2 className="animate-spin text-blue-500 mb-4" size={48} />
+        <p className="text-gray-400 font-medium tracking-wide">Loading report data...</p>
       </div>
     );
   }
 
   if (!report) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-gray-900 via-slate-900 to-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="mx-auto mb-4 text-red-400" size={64} />
-          <h2 className="text-2xl font-bold text-white mb-2">
-            Report Not Found
-          </h2>
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center font-sans">
+        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-center bg-gray-900/80 p-10 rounded-4xl border border-gray-800">
+          <AlertCircle className="mx-auto mb-6 text-red-400" size={64} />
+          <h2 className="text-3xl font-bold text-white mb-3">Report Not Found</h2>
+          <p className="text-gray-400 mb-8 max-w-sm">We couldn't locate the requested report. It may have been deleted or you lack permissions.</p>
           <button
-            onClick={() => navigate("/reports")}
-            className="text-blue-400 hover:text-blue-300 transition-colors"
+            onClick={() => navigate("/members")}
+            className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white px-6 py-3 rounded-xl transition-colors font-medium"
           >
             Back to Reports
           </button>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-900 via-slate-900 to-gray-900">
+    <div className="min-h-screen bg-gray-950 font-sans text-gray-100 selection:bg-blue-500/30 relative overflow-hidden">
+      {/* Ambient Background Glows */}
+      <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-blue-600/10 blur-[150px] rounded-full pointer-events-none" />
+      <div className="absolute top-[40%] left-0 w-[500px] h-[500px] bg-green-600/5 blur-[150px] rounded-full pointer-events-none" />
+
       {/* Header */}
-      <div className="bg-gray-800/60 backdrop-blur-xl border-b border-gray-700 sticky top-0 z-10">
+      <motion.div 
+        initial={{ y: -50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="bg-gray-950/80 backdrop-blur-xl border-b border-gray-800/60 sticky top-0 z-30"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-700 rounded-lg"
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => navigate("/members")}
+                className="text-gray-400 hover:text-white transition-colors p-2.5 bg-gray-900 hover:bg-gray-800 border border-gray-800 rounded-xl shadow-sm"
               >
-                <ArrowLeft size={24} />
-              </button>
+                <ArrowLeft size={22} />
+              </motion.button>
               <div>
-                <h1 className="text-2xl font-bold text-white">
-                  Report #{report.id}
-                </h1>
-                <p className="text-sm text-gray-400">
-                  {report.report_metadata?.report_type || "Health Report"} •{" "}
-                  {formatDate(report.created_at)}
-                </p>
+                <h1 className="text-2xl font-bold text-white tracking-tight">Report #{report.id}</h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-sm font-medium text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+                    {report.report_metadata?.report_type || "Health Report"}
+                  </span>
+                  <span className="text-sm text-gray-400">• {formatDate(report.created_at)}</span>
+                </div>
               </div>
             </div>
-            <div className="flex gap-x-3">
-              <button
+            
+            <div className="flex items-center gap-3 self-end sm:self-auto">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={downloadAllMedia}
-                className="bg-linear-to-r from-blue-600 to-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 flex items-center space-x-2"
+                className="bg-gray-900 hover:bg-gray-800 border border-gray-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center space-x-2 shadow-sm"
               >
-                <span>Download All</span>
-                <Download size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  navigate(`/chat/${report.id}/${patient_id}`);
-                }}
-                className="bg-linear-to-r from-blue-600 to-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 flex items-center space-x-2"
+                <Download size={18} />
+                <span className="hidden sm:inline">Download</span>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate(`/chat/${report.id}/${patient_id}`)}
+                className="bg-linear-to-r from-blue-600 to-green-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300 flex items-center space-x-2"
               >
-                <span>Chat with Report</span>
-                <MoveUpRight size={20} />
-              </button>
+                <MoveUpRight size={18} />
+                <span>Chat with AI</span>
+              </motion.button>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 relative z-10 pb-20">
+        
         {/* Status Banner */}
-        {report.error && (
-          <div className="bg-red-500/10 border border-red-500/50 rounded-2xl p-4 flex items-start space-x-3">
-            <XCircle className="text-red-400 shrink-0 mt-0.5" size={24} />
-            <div>
-              <h3 className="text-red-400 font-semibold mb-1">
-                Error Processing Report
-              </h3>
-              <p className="text-red-300 text-sm">{report.errormsg}</p>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {report.error && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-red-500/10 border border-red-500/30 rounded-2xl p-5 flex items-start space-x-4 backdrop-blur-sm shadow-lg shadow-red-500/5">
+              <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center shrink-0">
+                <XCircle className="text-red-400" size={24} />
+              </div>
+              <div>
+                <h3 className="text-red-400 font-bold mb-1">Error Processing Report</h3>
+                <p className="text-red-300/80 text-sm leading-relaxed">{report.errormsg}</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Report Media */}
-        {report.reports_media && report.reports_media.length > 0 && (
-          <Section
-            title="Report Files"
-            icon={FileText}
-            isExpanded={expandedSections.has("media")}
-            onToggle={() => toggleSection("media")}
-          >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {report.reports_media.map((media, index) => (
-                <div
-                  key={index}
-                  className="group relative aspect-square bg-gray-900 rounded-xl overflow-hidden border border-gray-700 hover:border-blue-500 transition-all cursor-pointer"
-                  onClick={() => {
-                    setSelectedMediaIndex(index);
-                    setShowMediaModal(true);
-                  }}
-                >
-                  <img
-                    src={media.url}
-                    alt={`Report page ${index + 1}`}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Eye className="text-white" size={32} />
-                  </div>
-                  <div className="absolute bottom-2 left-2 bg-gray-900/90 px-2 py-1 rounded text-xs text-white">
-                    Page {index + 1}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* AI Summary */}
+        {/* AI Summary Section */}
         {report.reports_media && report.reports_media.length > 0 && (
           <Section
             title="AI Report Summary"
-            icon={FileText}
+            icon={Sparkles}
             isExpanded={expandedSections.has("summary")}
             onToggle={() => toggleSection("summary")}
+            delay={0.1}
           >
-            <div className="flex flex-col gap-3">
-              <p className="text-gray-300">
-                {summary
-                  ? "AI Generated summary of report"
-                  : "Summarize Report using AI"}
-              </p>
-              {!loadingSummary && !summary && (
-                <button
-                  onClick={() => {
-                    handleSummarize();
-                  }}
-                  className="px-4 py-2 rounded-xl bg-gray-800/70 border border-gray-700 
-                                    text-white font-medium backdrop-blur-sm hover:bg-gray-700 
-                                    active:scale-95 transition-all duration-150"
-                >
-                  <div className="flex justify-center items-center gap-x-1.5">
-                    Generate Summary <Sparkles size={22} />
-                  </div>
-                </button>
-              )}
-              {loadingSummary && (
-                <div className="flex justify-center items-center">
-                  {" "}
-                  <p
-                    className="px-4 py-2 rounded-xl bg-gray-800/70 border border-gray-700 
-                                    text-white font-medium backdrop-blur-sm hover:bg-gray-700 
-                                    active:scale-95 transition-all duration-150"
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <p className="text-gray-400 text-sm">
+                  {summary ? "AI-generated executive summary of the findings below." : "Generate a quick, understandable summary of this report."}
+                </p>
+                {!loadingSummary && !summary && (
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleSummarize}
+                    className="px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 font-semibold hover:bg-blue-500/20 transition-all text-sm flex items-center gap-2"
                   >
-                    Summarizing Report Please Wait.......
-                  </p>
+                    Generate Summary <Sparkles size={16} />
+                  </motion.button>
+                )}
+              </div>
+
+              {loadingSummary && (
+                <div className="flex items-center gap-3 p-4 bg-gray-950 rounded-xl border border-gray-800 text-gray-400">
+                  <Loader2 className="animate-spin text-blue-500" size={20} />
+                  <span className="text-sm font-medium">Analyzing document and generating summary...</span>
                 </div>
               )}
+
               {summary && (
-                <div
-                  className={`px-4 py-3 rounded-xl bg-gray-800/70 border border-gray-700 
-                                        text-white font-medium backdrop-blur-sm transition-all duration-300
-                                        ${summary ? "animate-fadeIn" : "hidden"}`}
-                >
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-5 rounded-xl bg-gray-950 border border-gray-800 text-gray-200 text-sm leading-relaxed shadow-inner">
                   <Typewriter text={summary} />
-                </div>
+                </motion.div>
               )}
             </div>
           </Section>
@@ -431,91 +410,33 @@ const ReportDetailPage = () => {
         {/* Patient & Report Metadata */}
         {report.report_metadata && (
           <Section
-            title="Patient & Report Information"
+            title="Patient & Document Info"
             icon={User}
             isExpanded={expandedSections.has("metadata")}
             onToggle={() => toggleSection("metadata")}
+            delay={0.2}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {report.report_metadata.patient_name && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Patient Name</p>
-                  <p className="text-white font-semibold">
-                    {report.report_metadata.patient_name}
-                  </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { label: "Patient Name", value: report.report_metadata.patient_name },
+                { label: "Age", value: report.report_metadata.patient_age },
+                { label: "Gender", value: report.report_metadata.patient_gender },
+                { label: "Sample Type", value: report.report_metadata.sample_type },
+                { label: "Accession Number", value: report.report_metadata.accession_number },
+                { label: "Collection Date", value: report.report_metadata.collection_date ? formatDate(report.report_metadata.collection_date) : null },
+                { label: "Report Date", value: report.report_metadata.report_date ? formatDate(report.report_metadata.report_date) : null },
+                { label: "Lab Name", value: report.report_metadata.lab_name },
+              ].map((item, i) => item.value && (
+                <div key={i} className="bg-gray-950 rounded-xl p-4 border border-gray-800 hover:border-gray-700 transition-colors">
+                  <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">{item.label}</p>
+                  <p className="text-white font-medium">{item.value}</p>
                 </div>
-              )}
-              {report.report_metadata.patient_age && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Age</p>
-                  <p className="text-white font-semibold">
-                    {report.report_metadata.patient_age}
-                  </p>
-                </div>
-              )}
-              {report.report_metadata.patient_gender && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Gender</p>
-                  <p className="text-white font-semibold">
-                    {report.report_metadata.patient_gender}
-                  </p>
-                </div>
-              )}
-              {report.report_metadata.accession_number && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Accession Number</p>
-                  <p className="text-white font-semibold">
-                    {report.report_metadata.accession_number}
-                  </p>
-                </div>
-              )}
-              {report.report_metadata.sample_type && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Sample Type</p>
-                  <p className="text-white font-semibold">
-                    {report.report_metadata.sample_type}
-                  </p>
-                </div>
-              )}
-              {report.report_metadata.collection_date && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Collection Date</p>
-                  <p className="text-white font-semibold">
-                    {formatDate(report.report_metadata.collection_date)}
-                  </p>
-                </div>
-              )}
-              {report.report_metadata.report_date && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Report Date</p>
-                  <p className="text-white font-semibold">
-                    {formatDate(report.report_metadata.report_date)}
-                  </p>
-                </div>
-              )}
-              {report.report_metadata.lab_name && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Lab Name</p>
-                  <p className="text-white font-semibold">
-                    {report.report_metadata.lab_name}
-                  </p>
-                </div>
-              )}
-              {report.report_metadata.lab_director && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Lab Director</p>
-                  <p className="text-white font-semibold">
-                    {report.report_metadata.lab_director}
-                  </p>
-                </div>
-              )}
+              ))}
             </div>
             {report.report_metadata.notes && (
-              <div className="mt-4 bg-gray-900/50 rounded-lg p-4">
-                <p className="text-gray-400 text-sm mb-2">Notes</p>
-                <p className="text-white leading-relaxed">
-                  {report.report_metadata.notes}
-                </p>
+              <div className="mt-4 bg-gray-950 rounded-xl p-4 border border-gray-800">
+                <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Clinical Notes</p>
+                <p className="text-gray-300 text-sm leading-relaxed">{report.report_metadata.notes}</p>
               </div>
             )}
           </Section>
@@ -528,72 +449,50 @@ const ReportDetailPage = () => {
             icon={Beaker}
             isExpanded={expandedSections.has("test-results")}
             onToggle={() => toggleSection("test-results")}
+            delay={0.3}
           >
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-sm">
-                      Test Name
-                    </th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-sm">
-                      Result
-                    </th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-sm">
-                      Reference Range
-                    </th>
-                    <th className="text-left py-3 px-4 text-gray-400 font-semibold text-sm">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {report.test_results.map((test, index) => (
-                    <tr
-                      key={index}
-                      className="border-b border-gray-800 hover:bg-gray-900/50"
-                    >
-                      <td className="py-4 px-4">
-                        <p className="text-white font-medium">
-                          {test.test_name}
-                        </p>
-                        {test.test_category && (
-                          <p className="text-gray-500 text-sm">
-                            {test.test_category}
-                          </p>
-                        )}
-                      </td>
-                      <td className="py-4 px-4">
-                        <p className="text-white">
-                          {test.result_value}{" "}
-                          {test.unit && (
-                            <span className="text-gray-400">{test.unit}</span>
-                          )}
-                        </p>
-                      </td>
-                      <td className="py-4 px-4 text-gray-400">
-                        {test.reference_range || test.cutoff_value || "N/A"}
-                      </td>
-                      <td className="py-4 px-4">
-                        {test.outcome && (
-                          <span
-                            className={`inline-flex items-center space-x-1 px-3 py-1 rounded-lg border text-sm font-medium ${getOutcomeColor(test.outcome, test.is_abnormal, test.is_critical)}`}
-                          >
-                            {test.is_critical && <AlertCircle size={14} />}
-                            {test.is_abnormal && !test.is_critical && (
-                              <AlertCircle size={14} />
-                            )}
-                            {!test.is_abnormal && !test.is_critical && (
-                              <CheckCircle2 size={14} />
-                            )}
-                            <span>{test.outcome}</span>
-                          </span>
-                        )}
-                      </td>
+            <div className="rounded-xl border border-gray-800 overflow-hidden bg-gray-950">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-900 border-b border-gray-800">
+                      <th className="py-4 px-5 text-gray-400 font-semibold text-xs uppercase tracking-wider">Test Name</th>
+                      <th className="py-4 px-5 text-gray-400 font-semibold text-xs uppercase tracking-wider">Result</th>
+                      <th className="py-4 px-5 text-gray-400 font-semibold text-xs uppercase tracking-wider hidden sm:table-cell">Reference</th>
+                      <th className="py-4 px-5 text-gray-400 font-semibold text-xs uppercase tracking-wider">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/50">
+                    {report.test_results.map((test, index) => (
+                      <tr key={index} className="hover:bg-gray-800/30 transition-colors">
+                        <td className="py-4 px-5">
+                          <p className="text-white font-medium text-sm">{test.test_name}</p>
+                          {test.test_category && <p className="text-gray-500 text-xs mt-0.5">{test.test_category}</p>}
+                        </td>
+                        <td className="py-4 px-5">
+                          <div className="flex items-baseline gap-1.5">
+                            <span className={`font-semibold ${test.is_abnormal || test.is_critical ? "text-yellow-400" : "text-white"}`}>
+                              {test.result_value || "—"}
+                            </span>
+                            {test.unit && <span className="text-gray-500 text-xs">{test.unit}</span>}
+                          </div>
+                        </td>
+                        <td className="py-4 px-5 text-gray-400 text-sm hidden sm:table-cell">
+                          {test.reference_range || test.cutoff_value || "N/A"}
+                        </td>
+                        <td className="py-4 px-5">
+                          {test.outcome && (
+                            <span className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-md border text-xs font-semibold uppercase tracking-wider ${getOutcomeColor(test.outcome, test.is_abnormal, test.is_critical)}`}>
+                              {test.is_critical ? <AlertCircle size={12} /> : test.is_abnormal ? <AlertCircle size={12} /> : <CheckCircle2 size={12} />}
+                              <span>{test.outcome}</span>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </Section>
         )}
@@ -605,73 +504,39 @@ const ReportDetailPage = () => {
             icon={CheckCircle2}
             isExpanded={expandedSections.has("specimen")}
             onToggle={() => toggleSection("specimen")}
+            delay={0.4}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {report.specimen_validity.is_valid !== undefined && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Overall Status</p>
+                <div className="bg-gray-950 rounded-xl p-4 border border-gray-800">
+                  <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-2">Overall Status</p>
                   <div className="flex items-center space-x-2">
-                    {report.specimen_validity.is_valid ? (
-                      <CheckCircle2 className="text-green-400" size={20} />
-                    ) : (
-                      <XCircle className="text-red-400" size={20} />
-                    )}
-                    <p className="text-white font-semibold">
-                      {report.specimen_validity.is_valid ? "Valid" : "Invalid"}
+                    {report.specimen_validity.is_valid ? <CheckCircle2 className="text-green-400" size={20} /> : <XCircle className="text-red-400" size={20} />}
+                    <p className={`font-bold ${report.specimen_validity.is_valid ? "text-green-400" : "text-red-400"}`}>
+                      {report.specimen_validity.is_valid ? "Valid Specimen" : "Invalid Specimen"}
                     </p>
                   </div>
                 </div>
               )}
               {report.specimen_validity.specific_gravity !== undefined && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Specific Gravity</p>
-                  <p className="text-white font-semibold">
-                    {report.specimen_validity.specific_gravity}
-                  </p>
-                  {report.specimen_validity.specific_gravity_status && (
-                    <p className="text-gray-500 text-sm">
-                      {report.specimen_validity.specific_gravity_status}
-                    </p>
-                  )}
+                <div className="bg-gray-950 rounded-xl p-4 border border-gray-800">
+                  <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Specific Gravity</p>
+                  <p className="text-white font-semibold text-lg">{report.specimen_validity.specific_gravity}</p>
+                  {report.specimen_validity.specific_gravity_status && <p className="text-gray-500 text-xs mt-1">{report.specimen_validity.specific_gravity_status}</p>}
                 </div>
               )}
               {report.specimen_validity.ph_level !== undefined && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">pH Level</p>
-                  <p className="text-white font-semibold">
-                    {report.specimen_validity.ph_level}
-                  </p>
-                  {report.specimen_validity.ph_status && (
-                    <p className="text-gray-500 text-sm">
-                      {report.specimen_validity.ph_status}
-                    </p>
-                  )}
+                <div className="bg-gray-950 rounded-xl p-4 border border-gray-800">
+                  <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">pH Level</p>
+                  <p className="text-white font-semibold text-lg">{report.specimen_validity.ph_level}</p>
+                  {report.specimen_validity.ph_status && <p className="text-gray-500 text-xs mt-1">{report.specimen_validity.ph_status}</p>}
                 </div>
               )}
               {report.specimen_validity.creatinine !== undefined && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Creatinine</p>
-                  <p className="text-white font-semibold">
-                    {report.specimen_validity.creatinine}
-                  </p>
-                  {report.specimen_validity.creatinine_status && (
-                    <p className="text-gray-500 text-sm">
-                      {report.specimen_validity.creatinine_status}
-                    </p>
-                  )}
-                </div>
-              )}
-              {report.specimen_validity.oxidants && (
-                <div className="bg-gray-900/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm mb-1">Oxidants</p>
-                  <p className="text-white font-semibold">
-                    {report.specimen_validity.oxidants}
-                  </p>
-                  {report.specimen_validity.oxidants_status && (
-                    <p className="text-gray-500 text-sm">
-                      {report.specimen_validity.oxidants_status}
-                    </p>
-                  )}
+                <div className="bg-gray-950 rounded-xl p-4 border border-gray-800">
+                  <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1">Creatinine</p>
+                  <p className="text-white font-semibold text-lg">{report.specimen_validity.creatinine}</p>
+                  {report.specimen_validity.creatinine_status && <p className="text-gray-500 text-xs mt-1">{report.specimen_validity.creatinine_status}</p>}
                 </div>
               )}
             </div>
@@ -685,30 +550,20 @@ const ReportDetailPage = () => {
             icon={Beaker}
             isExpanded={expandedSections.has("screening")}
             onToggle={() => toggleSection("screening")}
+            delay={0.5}
           >
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {report.screening_tests.map((test, index) => (
-                <div
-                  key={index}
-                  className="bg-gray-900/50 rounded-lg p-4 flex items-center justify-between"
-                >
+                <div key={index} className="bg-gray-950 rounded-xl p-4 border border-gray-800 flex items-center justify-between">
                   <div>
-                    <p className="text-white font-medium">{test.test_name}</p>
-                    {test.result_value && (
-                      <p className="text-gray-400 text-sm">
-                        Value: {test.result_value}
-                      </p>
-                    )}
-                    {test.cutoff_value && (
-                      <p className="text-gray-500 text-sm">
-                        Cutoff: {test.cutoff_value}
-                      </p>
-                    )}
+                    <p className="text-white font-semibold text-sm">{test.test_name}</p>
+                    <div className="flex gap-3 mt-1">
+                      {test.result_value && <p className="text-gray-400 text-xs">Result: <span className="text-gray-300">{test.result_value}</span></p>}
+                      {test.cutoff_value && <p className="text-gray-500 text-xs">Cutoff: {test.cutoff_value}</p>}
+                    </div>
                   </div>
                   {test.outcome && (
-                    <span
-                      className={`px-3 py-1 rounded-lg border text-sm font-medium ${getOutcomeColor(test.outcome)}`}
-                    >
+                    <span className={`px-2.5 py-1 rounded-md border text-xs font-bold uppercase tracking-wider ${getOutcomeColor(test.outcome)}`}>
                       {test.outcome}
                     </span>
                   )}
@@ -718,171 +573,149 @@ const ReportDetailPage = () => {
           </Section>
         )}
 
-        {/* Confirmation Tests */}
-        {report.confirmation_tests && report.confirmation_tests.length > 0 && (
+        {/* Report Media Gallery */}
+        {report.reports_media && report.reports_media.length > 0 && (
           <Section
-            title="Confirmation Tests"
-            icon={Beaker}
-            isExpanded={expandedSections.has("confirmation")}
-            onToggle={() => toggleSection("confirmation")}
+            title="Scanned Documents"
+            icon={FileText}
+            isExpanded={expandedSections.has("media")}
+            onToggle={() => toggleSection("media")}
+            delay={0.6}
           >
-            <div className="space-y-3">
-              {report.confirmation_tests.map((test, index) => (
-                <div key={index} className="bg-gray-900/50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-white font-medium">{test.test_name}</p>
-                    {test.outcome && (
-                      <span
-                        className={`px-3 py-1 rounded-lg border text-sm font-medium ${getOutcomeColor(test.outcome)}`}
-                      >
-                        {test.outcome}
-                      </span>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                    {test.method && (
-                      <div>
-                        <p className="text-gray-500">Method</p>
-                        <p className="text-gray-300">{test.method}</p>
-                      </div>
-                    )}
-                    {test.result_value && (
-                      <div>
-                        <p className="text-gray-500">Result</p>
-                        <p className="text-gray-300">
-                          {test.result_value} {test.unit}
-                        </p>
-                      </div>
-                    )}
-                    {test.cutoff_value && (
-                      <div>
-                        <p className="text-gray-500">Cutoff</p>
-                        <p className="text-gray-300">{test.cutoff_value}</p>
-                      </div>
-                    )}
-                    {test.detection_window && (
-                      <div>
-                        <p className="text-gray-500">Detection Window</p>
-                        <p className="text-gray-300">{test.detection_window}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* Medications */}
-        {report.medications && report.medications.length > 0 && (
-          <Section
-            title="Reported Medications"
-            icon={Pill}
-            isExpanded={expandedSections.has("medications")}
-            onToggle={() => toggleSection("medications")}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {report.medications.map((med, index) => (
-                <div
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {report.reports_media.map((media, index) => (
+                <motion.div
+                  whileHover={{ y: -5 }}
                   key={index}
-                  className="bg-gray-900/50 rounded-lg p-3 flex items-center justify-between"
+                  className="group relative aspect-3/4 bg-gray-950 rounded-xl overflow-hidden border border-gray-800 hover:border-blue-500/50 transition-all cursor-pointer shadow-md"
+                  onClick={() => {
+                    setSelectedMediaIndex(index);
+                    setShowMediaModal(true);
+                  }}
                 >
-                  <p className="text-white">{med.medication_name}</p>
-                  {med.is_tested !== undefined && (
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${med.is_tested ? "bg-blue-500/20 text-blue-400" : "bg-gray-500/20 text-gray-400"}`}
-                    >
-                      {med.is_tested ? "Tested" : "Not Tested"}
-                    </span>
-                  )}
-                </div>
+                  <img
+                    src={media.url}
+                    alt={`Report page ${index + 1}`}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 opacity-80 group-hover:opacity-100"
+                  />
+                  <div className="absolute inset-0 bg-gray-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                    <div className="bg-blue-600 text-white p-3 rounded-full shadow-lg">
+                      <Eye size={20} />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-full bg-linear-to-t from-gray-950 to-transparent p-3 pt-8">
+                    <p className="text-xs font-medium text-white shadow-sm">Page {index + 1}</p>
+                  </div>
+                </motion.div>
               ))}
             </div>
           </Section>
         )}
       </div>
 
-      {/* Media Modal */}
-      {showMediaModal && report.reports_media && (
-        <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setShowMediaModal(false)}
-        >
-          <div
-            className="bg-gray-800 rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-auto border border-gray-700"
-            onClick={(e) => e.stopPropagation()}
+      {/* Media Viewer Modal */}
+      <AnimatePresence>
+        {showMediaModal && report.reports_media && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-gray-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 sm:p-6"
+            onClick={() => setShowMediaModal(false)}
           >
-            <div className="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between z-10">
-              <div>
-                <h3 className="text-xl font-bold text-white">Report Files</h3>
-                <p className="text-sm text-gray-400">
-                  Viewing {selectedMediaIndex + 1} of{" "}
-                  {report.reports_media.length}
-                </p>
+            <motion.div
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="bg-gray-900 rounded-4xl max-w-5xl w-full max-h-[95vh] flex flex-col overflow-hidden shadow-2xl shadow-black/50 border border-gray-800"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="bg-gray-900 border-b border-gray-800 p-5 flex items-center justify-between z-10 shrink-0">
+                <div>
+                  <h3 className="text-xl font-bold text-white tracking-tight">Document Viewer</h3>
+                  <p className="text-sm text-gray-400 font-medium">
+                    Page {selectedMediaIndex + 1} of {report.reports_media.length}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowMediaModal(false)}
+                  className="text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 p-2 rounded-full transition-colors border border-gray-700"
+                >
+                  <XCircle size={24} />
+                </button>
               </div>
-              <button
-                onClick={() => setShowMediaModal(false)}
-                className="text-gray-400 hover:text-white transition-colors"
-              >
-                <XCircle size={24} />
-              </button>
-            </div>
 
-            <div className="p-6 relative">
-              <img
-                src={report.reports_media[selectedMediaIndex].url}
-                alt={`Report page ${selectedMediaIndex + 1}`}
-                className="w-full rounded-lg"
-              />
+              <div className="p-4 sm:p-8 flex-1 overflow-y-auto bg-gray-950 flex items-center justify-center relative min-h-[300px]">
+                <img
+                  src={report.reports_media[selectedMediaIndex].url}
+                  alt={`Report page ${selectedMediaIndex + 1}`}
+                  className="max-w-full max-h-[60vh] object-contain rounded-xl shadow-lg border border-gray-800"
+                />
+
+                {report.reports_media.length > 1 && (
+                  <>
+                    <button
+                      onClick={(e) => navigateMedia("prev", e)}
+                      disabled={selectedMediaIndex === 0}
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-gray-900/80 backdrop-blur-sm border border-gray-700 hover:bg-gray-800 text-white p-3 rounded-full transition-all disabled:opacity-0 disabled:cursor-not-allowed shadow-xl"
+                    >
+                      <ChevronLeft size={24} />
+                    </button>
+                    <button
+                      onClick={(e) => navigateMedia("next", e)}
+                      disabled={selectedMediaIndex === report.reports_media.length - 1}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-gray-900/80 backdrop-blur-sm border border-gray-700 hover:bg-gray-800 text-white p-3 rounded-full transition-all disabled:opacity-0 disabled:cursor-not-allowed shadow-xl"
+                    >
+                      <ChevronRight size={24} />
+                    </button>
+                  </>
+                )}
+              </div>
 
               {report.reports_media.length > 1 && (
-                <>
-                  <button
-                    onClick={() => navigateMedia("prev")}
-                    disabled={selectedMediaIndex === 0}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-gray-900/90 hover:bg-gray-900 text-white p-3 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft size={24} />
-                  </button>
-                  <button
-                    onClick={() => navigateMedia("next")}
-                    disabled={
-                      selectedMediaIndex === report.reports_media.length - 1
-                    }
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-900/90 hover:bg-gray-900 text-white p-3 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <ChevronRight size={24} />
-                  </button>
-                </>
-              )}
-            </div>
-
-            {report.reports_media.length > 1 && (
-              <div className="border-t border-gray-700 p-4">
-                <div className="flex space-x-2 overflow-x-auto">
-                  {report.reports_media.map((media, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedMediaIndex(index)}
-                      className={`shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
-                        index === selectedMediaIndex
-                          ? "border-blue-500 scale-105"
-                          : "border-gray-600 hover:border-gray-500"
-                      }`}
-                    >
-                      <img
-                        src={media.url}
-                        alt={`Thumbnail ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
+                <div className="bg-gray-900 border-t border-gray-800 p-4 shrink-0">
+                  <div className="flex space-x-3 overflow-x-auto pb-2 custom-scrollbar">
+                    {report.reports_media.map((media, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedMediaIndex(index)}
+                        className={`shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
+                          index === selectedMediaIndex
+                            ? "border-blue-500 scale-105 shadow-lg shadow-blue-500/20"
+                            : "border-gray-800 hover:border-gray-600 opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        <img
+                          src={media.url}
+                          alt={`Thumbnail ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #374151;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: #4b5563;
+        }
+      `}</style>
     </div>
   );
 };

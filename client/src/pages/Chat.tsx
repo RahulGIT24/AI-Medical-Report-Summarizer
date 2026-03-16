@@ -87,7 +87,7 @@ const AIChatInterface = () => {
         }
       };
 
-      evtSource.onerror = (err) => {
+      evtSource.onerror = () => {
         evtSource.close();
         setIsLoading(false);
       };

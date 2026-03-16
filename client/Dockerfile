@@ -10,10 +10,10 @@ RUN pnpm install
 
 COPY . .
 
-RUN pnpm build
+ARG VITE_BASE_URL
+ENV VITE_BASE_URL=$VITE_BASE_URL
 
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
+RUN pnpm build
 
 FROM nginx:alpine
 

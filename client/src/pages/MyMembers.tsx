@@ -3,7 +3,6 @@ import {
   Activity,
   Upload,
   Search,
-  Plus,
   Loader2,
   Calendar,
   ChevronRight,

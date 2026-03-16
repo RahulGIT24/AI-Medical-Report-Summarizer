@@ -183,15 +183,6 @@ export default function MembersDashboard() {
               <Users className="text-blue-400" size={24} />
               Family Members
             </h2>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/dashboard")}
-              className="p-2.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-gray-300 transition-colors border border-gray-700"
-              title="Add Member"
-            >
-              <Plus size={20} />
-            </motion.button>
           </div>
 
           <div className="relative">

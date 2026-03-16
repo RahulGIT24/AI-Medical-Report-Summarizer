@@ -21,9 +21,9 @@ export default function Signin() {
 
   const onChangeFData = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormdata(prev => ({
+    setFormdata((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -47,14 +47,17 @@ export default function Signin() {
       navigate("/dashboard");
       resetForm();
     } catch (error: any) {
-      toast.error(error?.response?.data?.detail || "An error occurred during sign in.");
+      toast.error(
+        error?.response?.data?.detail || "An error occurred during sign in.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   // Shared input styling to match the Signup page exactly
-  const inputClasses = "w-full bg-gray-950/50 border border-gray-800 rounded-xl pl-11 pr-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300";
+  const inputClasses =
+    "w-full bg-gray-950/50 border border-gray-800 rounded-xl pl-11 pr-4 py-3 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-300";
 
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-950 relative overflow-hidden selection:bg-blue-500/30 font-sans">
@@ -76,15 +79,28 @@ export default function Signin() {
           >
             <Lock className="text-white" size={32} />
           </motion.div>
-          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Welcome Back</h1>
-          <p className="text-gray-400 text-sm">Sign in to continue to HealthScan</p>
+          <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
+            Welcome Back
+          </h1>
+          <p className="text-gray-400 text-sm">
+            Sign in to continue to HealthScan
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <label className="text-sm font-medium text-gray-400 block mb-1.5 ml-1">Email</label>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <label className="text-sm font-medium text-gray-400 block mb-1.5 ml-1">
+              Email
+            </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-3.5 text-gray-500" size={18} />
+              <Mail
+                className="absolute left-3.5 top-3.5 text-gray-500"
+                size={18}
+              />
               <input
                 type="email"
                 name="email"
@@ -97,13 +113,21 @@ export default function Signin() {
             </div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <div className="flex items-center justify-between mb-1.5 ml-1 pr-1">
-              <label className="text-sm font-medium text-gray-400">Password</label>
-              <a href="#" className="text-xs text-blue-400 hover:text-blue-300 transition-colors">Forgot password?</a>
+              <label className="text-sm font-medium text-gray-400">
+                Password
+              </label>
             </div>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-3.5 text-gray-500" size={18} />
+              <Lock
+                className="absolute left-3.5 top-3.5 text-gray-500"
+                size={18}
+              />
               <input
                 name="password"
                 value={formdata.password}
@@ -143,7 +167,10 @@ export default function Signin() {
             className="text-gray-400 text-center mt-6 text-sm"
           >
             Don’t have an account?{" "}
-            <a href="/signup" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+            <a
+              href="/signup"
+              className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+            >
               Sign up
             </a>
           </motion.p>

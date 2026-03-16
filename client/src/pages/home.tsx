@@ -9,6 +9,7 @@ import {
   Menu,
   X,
   Check,
+  Play,
 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,6 +26,7 @@ const staggerContainer = {
 };
 
 export default function HealthScanLanding() {
+  const [showDemo, setShowDemo] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -77,7 +79,39 @@ export default function HealthScanLanding() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white selection:bg-blue-500/30 font-sans overflow-hidden">
-      {/* --- Navigation --- */}
+      <AnimatePresence>
+        {showDemo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl"
+            onClick={() => setShowDemo(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-5xl aspect-video bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowDemo(false)}
+                className="absolute top-4 right-4 z-10 p-2 bg-black/50 hover:bg-white/10 rounded-full text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+              <iframe
+                src="https://drive.google.com/file/d/1aBwSHikla0xeajlqEepE8vKtKCkXIeRX/preview"
+                className="w-full h-full"
+                allow="autoplay"
+                allowFullScreen
+              ></iframe>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
@@ -141,7 +175,6 @@ export default function HealthScanLanding() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
@@ -183,7 +216,6 @@ export default function HealthScanLanding() {
 
       {/* --- Hero Section --- */}
       <section className="relative pt-36 pb-24 px-4 sm:px-6 lg:px-8 flex items-center justify-center min-h-[90vh]">
-        {/* Background Glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-blue-600/20 blur-[120px] rounded-full pointer-events-none" />
 
         <div className="max-w-7xl mx-auto relative z-10">
@@ -218,22 +250,28 @@ export default function HealthScanLanding() {
                   size={20}
                 />
               </button>
-              <button className="w-full sm:w-auto px-8 py-4 rounded-xl text-lg font-semibold border border-gray-700 hover:bg-gray-800 text-white transition-colors">
+              <button
+                onClick={() => setShowDemo(true)}
+                className="group w-full sm:w-auto px-8 py-4 rounded-xl text-lg font-semibold border border-gray-700 hover:bg-gray-800 text-white transition-all flex items-center justify-center gap-2"
+              >
+                <Play
+                  size={18}
+                  fill="currentColor"
+                  className="group-hover:scale-110 transition-transform"
+                />
                 View Live Demo
               </button>
             </motion.div>
           </motion.div>
 
-          {/* Animated Hero Illustration */}
           <motion.div
-            // variants={scaleIn}
-            initial="hidden"
-            animate="visible"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
             className="mt-20 relative max-w-5xl mx-auto"
           >
             <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl md:rounded-4xl p-4 md:p-8 border border-gray-800 shadow-2xl shadow-blue-500/10">
               <div className="aspect-video bg-gray-950 rounded-xl md:rounded-2xl border border-gray-800 flex items-center justify-center relative overflow-hidden">
-                {/* Grid Pattern */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#334155_1px,transparent_1px),linear-gradient(to_bottom,#334155_1px,transparent_1px)] bg-size-[24px_24px] opacity-20"></div>
 
                 <div className="relative z-10 text-center space-y-4">
@@ -245,7 +283,6 @@ export default function HealthScanLanding() {
                   </p>
                 </div>
 
-                {/* Floating Elements */}
                 <motion.div
                   animate={{ y: [-10, 10, -10] }}
                   transition={{
@@ -275,17 +312,15 @@ export default function HealthScanLanding() {
         </div>
       </section>
 
-      {/* --- Features Section --- */}
       <section
         id="features"
         className="py-24 px-4 sm:px-6 lg:px-8 border-t border-gray-800/50 bg-gray-950/50"
       >
         <div className="max-w-7xl mx-auto">
           <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            // variants={fadeInUp}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">
@@ -301,13 +336,12 @@ export default function HealthScanLanding() {
             variants={staggerContainer}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
+            viewport={{ once: true }}
             className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
           >
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                // variants={}
                 whileHover={{ y: -5 }}
                 className="bg-gray-900 rounded-2xl p-8 border border-gray-800 hover:border-gray-700 transition-colors group"
               >
@@ -326,14 +360,12 @@ export default function HealthScanLanding() {
         </div>
       </section>
 
-      {/* --- How It Works Section --- */}
       <section id="how-it-works" className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <motion.div
-            initial="hidden"
-            whileInView="visible"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">
@@ -346,9 +378,7 @@ export default function HealthScanLanding() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8 relative">
-            {/* Desktop Connector Line */}
             <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gray-800 -translate-y-1/2 z-0"></div>
-
             {[
               {
                 step: "01",
@@ -389,21 +419,18 @@ export default function HealthScanLanding() {
         </div>
       </section>
 
-      {/* --- Benefits Section --- */}
       <section
         id="benefits"
         className="py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden"
       >
-        {/* Background Gradients */}
         <div className="absolute inset-0 bg-linear-to-b from-blue-900/10 to-green-900/10 pointer-events-none" />
         <div className="absolute top-0 w-full h-px bg-linear-to-r from-transparent via-blue-500/50 to-transparent" />
 
         <div className="max-w-7xl mx-auto relative z-10">
           <motion.div
-            initial="hidden"
-            whileInView="visible"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">
@@ -424,7 +451,6 @@ export default function HealthScanLanding() {
             {benefits.map((benefit, index) => (
               <motion.div
                 key={index}
-                // 
                 className="flex items-center space-x-4 bg-gray-900/80 backdrop-blur-sm rounded-xl p-5 border border-gray-800 hover:bg-gray-800 transition-colors"
               >
                 <div className="shrink-0 w-8 h-8 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-400">
@@ -437,7 +463,6 @@ export default function HealthScanLanding() {
         </div>
       </section>
 
-      {/* --- CTA Section --- */}
       <section className="py-32 px-4 sm:px-6 lg:px-8 relative">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -446,16 +471,14 @@ export default function HealthScanLanding() {
           transition={{ duration: 0.5 }}
           className="max-w-5xl mx-auto bg-linear-to-br from-gray-900 to-gray-950 rounded-[3rem] p-10 md:p-20 text-center border border-gray-800 shadow-2xl relative overflow-hidden"
         >
-          {/* Decorative Glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-blue-500/20 blur-[100px]" />
-
           <div className="relative z-10">
             <h2 className="text-4xl md:text-6xl font-bold mb-6 text-white">
               Start Tracking Today
             </h2>
             <p className="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
               Digitize your medical cabinet and unlock AI-driven health insights
-              instantly. No credit card required to start.
+              instantly.
             </p>
             <button
               onClick={renderToSignUp}
@@ -471,7 +494,6 @@ export default function HealthScanLanding() {
         </motion.div>
       </section>
 
-      {/* --- Footer --- */}
       <footer className="border-t border-gray-800 bg-gray-950 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex flex-col items-center">
           <div className="flex items-center space-x-2 mb-6">
